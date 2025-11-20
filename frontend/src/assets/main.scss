@@ -1,0 +1,27 @@
+html {
+  font-size: 10px;
+  font-family: "Josefin Sans", sans-serif;
+  height: 100%;
+  width: 100%;
+}
+
+#app {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-container {
+  flex: 1;
+}
+
+.content-container {
+  flex: 5;
+  overflow-y: auto;
+  background-color: #f0f0f0;
+}

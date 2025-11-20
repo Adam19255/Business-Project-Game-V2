@@ -1,7 +1,12 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import Sidebar from "./views/sidebar.vue";
+</script>
 
 <template>
-  <router-view />
+  <Sidebar />
+  <div class="content-container">
+    <router-view />
+  </div>
 </template>
 
 <style scoped></style>
