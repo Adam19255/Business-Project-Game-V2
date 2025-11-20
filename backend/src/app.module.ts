@@ -3,6 +3,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { BusinessModule } from './modules/business/business.module';
 import { ProductModule } from './modules/product/product.module';
 import { MaterialModule } from './modules/material/material.module';
+import { OrderModule } from './modules/order/order.module';
+import { CustomerModule } from './modules/customer/customer.module';
+import { QueueModule } from './modules/queue/queue.module';
 
 @Module({
   imports: [
@@ -10,6 +13,9 @@ import { MaterialModule } from './modules/material/material.module';
     BusinessModule,
     ProductModule,
     MaterialModule,
+    OrderModule,
+    CustomerModule,
+    QueueModule,
   ],
   controllers: [],
   providers: [],
