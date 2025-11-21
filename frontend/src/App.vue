@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Sidebar from "./views/sidebar.vue";
+import Sidebar from "./views/Sidebar.vue";
 </script>
 
 <template>
@@ -8,5 +8,3 @@ import Sidebar from "./views/sidebar.vue";
     <router-view />
   </div>
 </template>
-
-<style scoped></style>

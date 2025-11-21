@@ -16,6 +16,10 @@ export class BusinessService {
     return newBusiness.save();
   }
 
+  getBusinessByName(name: string) {
+    return this.businessModel.findOne({ name }).exec();
+  }
+
   getAllBusinesses() {
     return this.businessModel.find().exec();
   }

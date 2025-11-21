@@ -18,7 +18,13 @@ export class BusinessController {
   constructor(private businessService: BusinessService) {}
 
   @Post()
-  createBusiness(@Body() createBusinessDto: CreateBusinessDto) {
+  async createBusiness(@Body() createBusinessDto: CreateBusinessDto) {
+    const business = await this.businessService.getBusinessByName(
+      createBusinessDto.name,
+    );
+    if (business) {
+      throw new HttpException('Business name already exists', 400);
+    }
     return this.businessService.createBusiness(createBusinessDto);
   }
 

@@ -1,8 +1,21 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from "vue-router";
+import createNewBusiness from "@/views/CreateNewBusiness.vue";
+import ShowAllBusinesses from "@/views/ShowAllBusinesses.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [],
-})
+  routes: [
+    {
+      path: "/create-new-business",
+      name: "CreateNewBusiness",
+      component: createNewBusiness,
+    },
+    {
+      path: "/show-all-businesses",
+      name: "ShowAllBusinesses",
+      component: ShowAllBusinesses,
+    },
+  ],
+});
 
-export default router
+export default router;
