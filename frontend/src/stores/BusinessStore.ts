@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import axios from "axios";
 
 export interface Business {
-  id?: string | number;
+  _id?: string | number;
   name: string;
   productionSlotsCount: number;
   deliveryTime: number;
