@@ -47,6 +47,21 @@ function reset() {
   form.productionSlotsCount = selected.value.productionSlotsCount ?? 0;
   form.deliveryTime = selected.value.deliveryTime ?? 0;
 }
+
+async function deleteBusiness() {
+  if (!selected.value || !selected.value._id) return alert("No business selected");
+
+  const confirmed = confirm("Are you sure you want to delete this business? This action cannot be undone.");
+  if (!confirmed) return;
+
+  try {
+    await businessStore.deleteBusiness(selected.value._id as string | number);
+    alert("Business deleted.");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to delete business. See console for details.");
+  }
+}
 </script>
 
 <template>
@@ -79,6 +94,8 @@ function reset() {
         <button type="submit" class="primary-button">Save</button>
       </div>
     </form>
+
+    <button @click="deleteBusiness" class="danger-button delete-business" v-if="selected">Delete Business</button>
   </div>
 </template>
 
@@ -133,5 +150,9 @@ form {
     margin-top: 2rem;
     gap: 1rem;
   }
+}
+
+.delete-business {
+  margin-top: 2rem;
 }
 </style>

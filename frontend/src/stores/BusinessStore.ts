@@ -17,6 +17,20 @@ export const useBusinessStore = defineStore("business", {
     selectedBusiness: null as Business | null,
   }),
   actions: {
+    async createBusiness(business: Business) {
+      this.isLoading = true;
+      try {
+        const res = await axios.post<Business>("http://localhost:3000/business", business);
+        this.businesses.push(res.data);
+        return res.data;
+      } catch (error) {
+        console.error("Error creating business:", error);
+        throw error;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
     async fetchBusinesses() {
       this.isLoading = true;
       try {
@@ -77,14 +91,16 @@ export const useBusinessStore = defineStore("business", {
       }
     },
 
-    async createBusiness(business: Business) {
+    async deleteBusiness(id: string | number) {
       this.isLoading = true;
       try {
-        const res = await axios.post<Business>("http://localhost:3000/business", business);
-        this.businesses.push(res.data);
-        return res.data;
+        await axios.delete(`http://localhost:3000/business/${id}`);
+        this.businesses = this.businesses.filter((b) => String(b._id) !== String(id));
+        if (this.selectedBusiness && String(this.selectedBusiness._id) === String(id)) {
+          this.selectedBusiness = null;
+        }
       } catch (error) {
-        console.error("Error creating business:", error);
+        console.error("Error deleting business:", error);
         throw error;
       } finally {
         this.isLoading = false;
