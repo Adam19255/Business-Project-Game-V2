@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
 
 @Schema()
 export class Material {
@@ -10,6 +11,9 @@ export class Material {
 
   @Prop({ required: true })
   stock: number;
+
+  @Prop({ type: Types.ObjectId, ref: 'Business', required: true })
+  businessId: Types.ObjectId;
 }
 
 export const MaterialSchema = SchemaFactory.createForClass(Material);

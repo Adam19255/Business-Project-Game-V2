@@ -10,11 +10,7 @@ export class OrderService {
   constructor(@InjectModel('Order') private orderModel: Model<Order>) {}
 
   createOrder(createOrderDto: CreateOrderDto) {
-    const payload = {
-      ...createOrderDto,
-      createdAt: createOrderDto.createdAt ?? Date.now(),
-    };
-    const newOrder = new this.orderModel(payload);
+    const newOrder = new this.orderModel(createOrderDto);
     return newOrder.save();
   }
 

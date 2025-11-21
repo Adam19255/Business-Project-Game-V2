@@ -6,10 +6,18 @@ export enum OrderStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   SUCCESS = 'SUCCESS',
   FAILED = 'FAILED',
+  CANCELED = 'CANCELED',
+  REORDERED = 'REORDERED',
 }
 
-@Schema({ timestamps: false })
+@Schema()
 export class Order {
+  @Prop({ type: Types.ObjectId, ref: 'Business', required: true })
+  businessId: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Queue', required: true })
+  queueId: Types.ObjectId;
+
   @Prop({ type: Types.ObjectId, ref: 'Customer', required: true })
   customerId: Types.ObjectId;
 
@@ -24,13 +32,16 @@ export class Order {
   status: OrderStatus;
 
   @Prop({ required: true, default: 0 })
-  orderDuration: number;
+  totalCost: number;
 
   @Prop({ required: true, default: 0 })
   attempts: number;
 
-  @Prop({ required: true })
-  createdAt: number;
+  @Prop({ default: Date.now })
+  createdAt: Date;
+
+  @Prop({ default: Date.now })
+  updatedAt: Date;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

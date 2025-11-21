@@ -3,6 +3,9 @@ import { Types } from 'mongoose';
 
 @Schema()
 export class Queue {
+  @Prop({ type: Types.ObjectId, ref: 'Business', required: true })
+  businessId: Types.ObjectId;
+
   @Prop({ required: true })
   name: string;
 
