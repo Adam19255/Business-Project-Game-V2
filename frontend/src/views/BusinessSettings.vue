@@ -1,0 +1,137 @@
+<script setup lang="ts">
+import { computed, reactive, watch } from "vue";
+import { useBusinessStore } from "@/stores/BusinessStore";
+
+const businessStore = useBusinessStore();
+const selected = computed(() => businessStore.selectedBusiness);
+
+const form = reactive({
+  name: "",
+  productionSlotsCount: 0,
+  deliveryTime: 0,
+});
+
+watch(
+  selected,
+  (b) => {
+    if (b) {
+      form.name = b.name ?? "";
+      form.productionSlotsCount = b.productionSlotsCount ?? 0;
+      form.deliveryTime = b.deliveryTime ?? 0;
+    }
+  },
+  { immediate: true }
+);
+
+async function save() {
+  if (!selected.value || !selected.value._id) return alert("No business selected");
+
+  const payload = {
+    name: form.name.trim(),
+    productionSlotsCount: Number(form.productionSlotsCount),
+    deliveryTime: Number(form.deliveryTime),
+  };
+
+  try {
+    await businessStore.updateBusiness(selected.value._id as string | number, payload);
+    alert("Business settings saved.");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to save settings. See console for details.");
+  }
+}
+
+function reset() {
+  if (!selected.value) return;
+  form.name = selected.value.name ?? "";
+  form.productionSlotsCount = selected.value.productionSlotsCount ?? 0;
+  form.deliveryTime = selected.value.deliveryTime ?? 0;
+}
+</script>
+
+<template>
+  <div>
+    <h1 class="title">Business Settings</h1>
+
+    <div v-if="!selected" class="no-business">
+      <p>No business loaded. Go to load businesses page and use the load button on a business card to open settings.</p>
+      <RouterLink to="/show-all-businesses">
+        <button class="primary-button">Go to Businesses</button>
+      </RouterLink>
+    </div>
+
+    <form v-else @submit.prevent="save">
+      <div class="form-item">
+        <label for="name">Business Name:</label>
+        <input id="name" type="text" v-model="form.name" />
+      </div>
+      <div class="form-item">
+        <label for="productionSlotsCount">Production Slots Count:</label>
+        <input id="productionSlotsCount" type="number" v-model.number="form.productionSlotsCount" min="0" />
+      </div>
+      <div class="form-item">
+        <label for="deliveryTime">Delivery Time (hours):</label>
+        <input id="deliveryTime" type="number" v-model.number="form.deliveryTime" min="0" />
+      </div>
+
+      <div class="action-buttons">
+        <button type="button" class="secondary-button" @click="reset">Reset</button>
+        <button type="submit" class="primary-button">Save</button>
+      </div>
+    </form>
+  </div>
+</template>
+
+<style scoped>
+.title {
+  font-size: 4rem;
+  margin-bottom: 3rem;
+  color: #42b983;
+}
+.no-business {
+  font-size: 2rem;
+  color: #888;
+  margin-bottom: 2rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 50rem;
+
+  .form-item {
+    display: flex;
+    flex-direction: column;
+    font-size: 2rem;
+
+    label {
+      margin-bottom: 0.5rem;
+    }
+
+    input {
+      padding: 1rem;
+      font-size: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+      transition: border-color 0.2s ease;
+
+      &:focus {
+        outline: none;
+        border-color: #42b983;
+      }
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    justify-content: end;
+    margin-top: 2rem;
+    gap: 1rem;
+  }
+}
+</style>

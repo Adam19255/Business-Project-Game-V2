@@ -59,6 +59,14 @@ export class BusinessController {
     if (!business) {
       throw new HttpException('Business not found', 404);
     }
+    if (updateBusinessDto.name) {
+      const existingBusiness = await this.businessService.getBusinessByName(
+        updateBusinessDto.name,
+      );
+      if (existingBusiness && existingBusiness._id.toString() !== id) {
+        throw new HttpException('Business name already exists', 400);
+      }
+    }
     return this.businessService.updateBusiness(id, updateBusinessDto);
   }
 

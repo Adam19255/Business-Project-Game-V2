@@ -1,24 +1,43 @@
 <script setup lang="ts">
 import ImagePlaceholder from "@/assets/image-placeholder.jpg";
+import NoImage from "@/assets/no-image.png";
+
+import { useRouter } from "vue-router";
+import { useBusinessStore } from "@/stores/BusinessStore";
 
 const props = defineProps(["business"]);
 
-function loadBusiness() {
-  // Placeholder for loading business logic
-  console.log(`Loading business: ${props.business.name}`);
+const router = useRouter();
+const businessStore = useBusinessStore();
+
+async function loadBusiness() {
+  if (!props.business || !props.business._id) {
+    console.error("No business data provided to BusinessDetails component");
+    return;
+  }
+  try {
+    await businessStore.loadBusiness(props.business._id);
+    router.push({ name: "BusinessSettings" });
+  } catch (err) {
+    console.error("Failed to load business:", err);
+    alert("Failed to load business. See console for details.");
+  }
 }
 </script>
 
 <template>
   <div class="business-card">
-    <img :src="ImagePlaceholder" alt="Business Image" class="business-image" />
+    <img
+      :src="props.business.id === 'preview' ? NoImage : ImagePlaceholder"
+      alt="Business Image"
+      class="business-image" />
     <div class="business-details">
       <h2>{{ props.business.name }}</h2>
       <p>Production Slots: {{ props.business.productionSlotsCount }}</p>
       <p>Delivery Time: {{ props.business.deliveryTime }} hours</p>
       <p>Products Count: {{ props.business.products.length }}</p>
     </div>
-    <button @click="loadBusiness">Load Business</button>
+    <button @click="loadBusiness" :class="props.business.id === 'preview' ? 'hide' : ''">Load Business</button>
   </div>
 </template>
 
@@ -38,6 +57,7 @@ function loadBusiness() {
     object-fit: cover;
     border-radius: 2.5rem;
     margin-bottom: 1rem;
+    background-color: #f0f0f0;
   }
 
   .business-details {
@@ -66,6 +86,10 @@ function loadBusiness() {
 
     &:hover {
       background-color: #42b983;
+    }
+
+    &.hide {
+      display: none;
     }
   }
 }

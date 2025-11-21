@@ -91,7 +91,7 @@
         <span>Add New Material</span>
       </div>
     </RouterLink>
-    <RouterLink to="settings">
+    <RouterLink to="/business-settings">
       <div class="sidebar-item">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
@@ -104,7 +104,7 @@
             <circle cx="12" cy="12" r="3" stroke="#5CB338" stroke-width="2"></circle>
           </g>
         </svg>
-        <span>Settings</span>
+        <span>Business Settings</span>
       </div>
     </RouterLink>
     <RouterLink to="/create-new-business">
