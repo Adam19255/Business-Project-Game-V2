@@ -2,18 +2,25 @@
 import { onMounted, ref } from "vue";
 import { useMaterialStore } from "@/stores/MaterialStore";
 import { useBusinessStore } from "@/stores/BusinessStore";
-import { useRouter } from "vue-router";
 import MaterialCard from "@/components/MaterialCard.vue";
 import Modal from "@/components/Modal.vue";
 
+interface MaterialDraft {
+  name: string;
+  timeRequired: number;
+  stock: number;
+}
+
 const materialStore = useMaterialStore();
 const businessStore = useBusinessStore();
-const router = useRouter();
 const selected = ref(businessStore.selectedBusiness);
 
 const editingId = ref<string | null>(null);
-const draft = ref<any>({});
-let materialName = "";
+const newItemDraft = ref<MaterialDraft>({ name: "", timeRequired: 0, stock: 0 });
+const draft = ref<MaterialDraft>({ name: "", timeRequired: 0, stock: 0 });
+let materialName: string = "";
+
+const addModalVisible = ref(false);
 const modalVisible = ref(false);
 
 const deleteModalVisible = ref(false);
@@ -24,7 +31,21 @@ onMounted(async () => {
   await materialStore.fetchMaterialsForBusiness(selected.value._id as string);
 });
 
-function startEdit(material: any) {
+async function submitNewMaterial() {
+  if (!newItemDraft.value.name || newItemDraft.value.timeRequired == null || newItemDraft.value.stock == null) {
+    alert("Please fill all fields.");
+    return;
+  }
+  await materialStore.createMaterial({
+    name: newItemDraft.value.name,
+    timeRequired: Number(newItemDraft.value.timeRequired),
+    stock: Number(newItemDraft.value.stock),
+  });
+  addModalVisible.value = false;
+  newItemDraft.value = { name: "", timeRequired: 0, stock: 0 };
+}
+
+function startEdit(material: MaterialDraft & { _id: string | number }) {
   editingId.value = String(material._id);
   draft.value = { ...material };
   materialName = material.name;
@@ -33,6 +54,10 @@ function startEdit(material: any) {
 
 async function saveEdit() {
   if (!editingId.value) return;
+  if (!draft.value.name || draft.value.timeRequired == null || draft.value.stock == null) {
+    alert("Please fill all fields.");
+    return;
+  }
   await materialStore.updateMaterial(editingId.value, {
     name: draft.value.name,
     timeRequired: Number(draft.value.timeRequired),
@@ -69,7 +94,7 @@ async function confirmDelete() {
       <p v-if="materialStore.materials.length === 0">No materials found. Press the "New Material" button to add one.</p>
     </div>
     <div>
-      <div class="primary-button add-material" @click="() => router.push('/materials/new')">
+      <div class="primary-button add-material" @click="() => (addModalVisible = true)">
         <svg class="plus-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff">
           <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
           <g
@@ -99,6 +124,28 @@ async function confirmDelete() {
       <MaterialCard :material="material" @edit="startEdit" @delete="() => onDeleteRequested(material._id)" />
     </div>
   </div>
+
+  <Modal
+    v-model:modelValue="addModalVisible"
+    title="Add new material"
+    okButtonText="Add"
+    @ok="submitNewMaterial"
+    @cancel="() => (addModalVisible = false)">
+    <div class="edit-form">
+      <div class="form-item">
+        <label for="name">Name:</label>
+        <input id="name" v-model="newItemDraft.name" type="text" required />
+      </div>
+      <div class="form-item">
+        <label for="timeRequired">Time Required:</label>
+        <input id="timeRequired" v-model.number="newItemDraft.timeRequired" type="number" required />
+      </div>
+      <div class="form-item">
+        <label for="stock">Stock:</label>
+        <input id="stock" v-model.number="newItemDraft.stock" type="number" required />
+      </div>
+    </div>
+  </Modal>
 
   <Modal
     v-model:modelValue="modalVisible"

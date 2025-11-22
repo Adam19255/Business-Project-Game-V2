@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  IsArray,
+  ArrayNotEmpty,
+} from 'class-validator';
 
 export class CreateProductDto {
   @IsNotEmpty()
@@ -13,7 +19,8 @@ export class CreateProductDto {
   @IsNumber()
   price: number;
 
+  @IsArray()
+  @ArrayNotEmpty()
   @IsString({ each: true })
-  @IsOptional()
-  materials?: string[]; // array of material IDs
+  materials: string[]; // array of material IDs (required, at least one)
 }

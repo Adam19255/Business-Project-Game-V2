@@ -4,7 +4,7 @@ import createNewBusiness from "@/views/CreateNewBusiness.vue";
 import ShowAllBusinesses from "@/views/ShowAllBusinesses.vue";
 import BusinessSettings from "@/views/BusinessSettings.vue";
 import ManageMaterials from "@/views/ManageMaterials.vue";
-import CreateNewMaterial from "@/views/CreateNewMaterial.vue";
+import ManageProducts from "@/views/ManageProducts.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,24 +20,24 @@ const router = createRouter({
       component: createNewBusiness,
     },
     {
+      path: "/business/settings",
+      name: "BusinessSettings",
+      component: BusinessSettings,
+    },
+    {
       path: "/business/all",
       name: "ShowAllBusinesses",
       component: ShowAllBusinesses,
     },
     {
+      path: "/products",
+      name: "ManageProducts",
+      component: ManageProducts,
+    },
+    {
       path: "/materials",
       name: "ManageMaterials",
       component: ManageMaterials,
-    },
-    {
-      path: "/materials/new",
-      name: "CreateNewMaterial",
-      component: CreateNewMaterial,
-    },
-    {
-      path: "/business/settings",
-      name: "BusinessSettings",
-      component: BusinessSettings,
     },
   ],
 });

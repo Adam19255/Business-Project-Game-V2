@@ -19,6 +19,27 @@ export class ProductController {
 
   @Post()
   createProduct(@Body() createProductDto: CreateProductDto) {
+    // validate businessId
+    if (!mongoose.Types.ObjectId.isValid(createProductDto.businessId)) {
+      throw new HttpException('Invalid Business ID', 400);
+    }
+
+    // materials must be an array with at least one valid ObjectId
+    if (
+      !Array.isArray(createProductDto.materials) ||
+      createProductDto.materials.length === 0
+    ) {
+      throw new HttpException(
+        'Product must include at least one material',
+        400,
+      );
+    }
+    for (const matId of createProductDto.materials) {
+      if (!mongoose.Types.ObjectId.isValid(matId)) {
+        throw new HttpException('Invalid Material ID in materials array', 400);
+      }
+    }
+
     return this.productService.createProduct(createProductDto);
   }
 
@@ -54,6 +75,16 @@ export class ProductController {
       throw new HttpException('Product not found', 404);
     }
     return this.productService.updateProduct(id, updateProductDto);
+  }
+
+  @Get('/business/:businessId')
+  async getProductsForBusiness(@Param('businessId') businessId: string) {
+    if (!mongoose.Types.ObjectId.isValid(businessId)) {
+      throw new HttpException('Invalid Business ID', 400);
+    }
+    const products =
+      await this.productService.getProductsForBusiness(businessId);
+    return products || [];
   }
 
   @Delete(':id')

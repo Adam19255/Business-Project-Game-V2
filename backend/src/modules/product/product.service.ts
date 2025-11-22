@@ -18,6 +18,10 @@ export class ProductService {
     return this.productModel.find().exec();
   }
 
+  getProductsForBusiness(businessId: string) {
+    return this.productModel.find({ businessId }).exec();
+  }
+
   getProductById(id: string) {
     return this.productModel.findById(id).exec();
   }
