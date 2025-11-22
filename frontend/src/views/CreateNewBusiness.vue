@@ -2,7 +2,7 @@
 import { reactive } from "vue";
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/BusinessStore";
-import BusinessDetails from "../components/BusinessDetails.vue";
+import BusinessCard from "../components/BusinessCard.vue";
 
 interface NewBusinessForm {
   name: string;
@@ -54,7 +54,7 @@ function clearForm() {
 </script>
 
 <template>
-  <h1 class="title">Create your business</h1>
+  <h1>Create your business</h1>
   <div class="preview">
     <div class="left-side">
       <form @submit.prevent="createBusiness">
@@ -100,7 +100,7 @@ function clearForm() {
       </form>
     </div>
     <div class="right-side">
-      <BusinessDetails
+      <BusinessCard
         :business="{
           id: 'preview',
           name: form.name || 'Business Name',
@@ -113,12 +113,6 @@ function clearForm() {
 </template>
 
 <style scoped>
-.title {
-  font-size: 4rem;
-  margin-bottom: 3rem;
-  color: #42b983;
-}
-
 .preview {
   display: flex;
   gap: 2rem;

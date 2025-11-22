@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from "vue";
+import { computed, reactive, watch, ref } from "vue";
+import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/BusinessStore";
+import Modal from "@/components/Modal.vue";
 
 const businessStore = useBusinessStore();
 const selected = computed(() => businessStore.selectedBusiness);
+const router = useRouter();
+
+const deleteModalVisible = ref(false);
+const deleteTargetId = ref<string | number | null>(null);
 
 const form = reactive({
   name: "",
@@ -48,19 +54,17 @@ function reset() {
   form.deliveryTime = selected.value.deliveryTime ?? 0;
 }
 
-async function deleteBusiness() {
-  if (!selected.value || !selected.value._id) return alert("No business selected");
+function onDeleteRequested(id: string | number | undefined) {
+  deleteTargetId.value = id ?? null;
+  deleteModalVisible.value = true;
+}
 
-  const confirmed = confirm("Are you sure you want to delete this business? This action cannot be undone.");
-  if (!confirmed) return;
-
-  try {
-    await businessStore.deleteBusiness(selected.value._id as string | number);
-    alert("Business deleted.");
-  } catch (err) {
-    console.error(err);
-    alert("Failed to delete business. See console for details.");
-  }
+async function confirmDelete() {
+  if (deleteTargetId.value == null) return;
+  await businessStore.deleteBusiness(deleteTargetId.value as string | number);
+  deleteTargetId.value = null;
+  deleteModalVisible.value = false;
+  router.push("/business/all");
 }
 </script>
 
@@ -70,7 +74,7 @@ async function deleteBusiness() {
 
     <div v-if="!selected" class="no-business">
       <p>No business loaded. Go to load businesses page and use the load button on a business card to open settings.</p>
-      <RouterLink to="/show-all-businesses">
+      <RouterLink to="/business/all">
         <button class="primary-button">Go to Businesses</button>
       </RouterLink>
     </div>
@@ -95,8 +99,25 @@ async function deleteBusiness() {
       </div>
     </form>
 
-    <button @click="deleteBusiness" class="danger-button delete-business" v-if="selected">Delete Business</button>
+    <button @click="onDeleteRequested(selected?._id)" class="danger-button delete-business" v-if="selected">
+      Delete Business
+    </button>
   </div>
+
+  <Modal
+    v-model:modelValue="deleteModalVisible"
+    :title="'Delete Business'"
+    okButtonText="Delete"
+    cancelButtonText="Cancel"
+    :okButtonClass="'danger-button'"
+    :cancelButtonClass="'secondary-button'"
+    @ok="confirmDelete"
+    @cancel="() => (deleteModalVisible = false)">
+    <div class="delete-modal">
+      <p>Are you sure you want to delete this business?</p>
+      <p>This action cannot be undone.</p>
+    </div>
+  </Modal>
 </template>
 
 <style scoped>
@@ -154,5 +175,13 @@ form {
 
 .delete-business {
   margin-top: 2rem;
+}
+
+.delete-modal {
+  font-size: 1.7rem;
+
+  p {
+    margin: 0.5rem 0;
+  }
 }
 </style>

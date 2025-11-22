@@ -12,6 +12,8 @@ html {
 }
 
 body {
+  height: 100%;
+  width: 100%;
   margin: 0;
   padding: 0;
 }
@@ -25,6 +27,13 @@ body {
   overflow-y: auto;
   background-color: #f0f0f0;
   padding: 4rem;
+}
+
+h1 {
+  font-size: 4rem;
+  margin-bottom: 3rem;
+  color: #42b983;
+  margin: 0;
 }
 
 .primary-button {
@@ -60,7 +69,7 @@ body {
 }
 
 .danger-button {
-  background-color: #e74c3c;
+  background-color: #dc4446;
   min-width: 15rem;
   color: white;
   border: none;
@@ -71,6 +80,6 @@ body {
   transition: background-color 0.3s ease;
 
   &:hover {
-    background-color: #c0392b;
+    background-color: #e86e6b;
   }
 }

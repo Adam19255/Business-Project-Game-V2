@@ -24,6 +24,10 @@ export class MaterialService {
     return this.materialModel.findById(id).exec();
   }
 
+  getMaterialsForBusiness(businessId: string) {
+    return this.materialModel.find({ businessId }).exec();
+  }
+
   updateMaterial(id: string, updateMaterialDto: updateMaterialDto) {
     return this.materialModel
       .findByIdAndUpdate(id, updateMaterialDto, { new: true })

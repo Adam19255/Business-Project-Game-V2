@@ -1,9 +1,22 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { computed, ref } from "vue";
+import { useBusinessStore } from "@/stores/BusinessStore";
+
+const businessStore = useBusinessStore();
+const selected = computed(() => businessStore.selectedBusiness);
+
+const collapsed = ref(false);
+
+function toggleCollapse() {
+  collapsed.value = !collapsed.value;
+}
+</script>
 
 <template>
-  <div class="sidebar-container">
-    <h2 class="business-logo">Business logo</h2>
-    <RouterLink to="/">
+  <div :class="['sidebar-container', { collapsed }]">
+    <h2 v-if="!selected">Welcome</h2>
+    <h2 v-else class="business-logo">Business logo</h2>
+    <RouterLink to="/" v-if="selected">
       <div class="sidebar-item">
         <svg viewBox="0 -0.5 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
@@ -46,7 +59,7 @@
         <span>Dashboard</span>
       </div>
     </RouterLink>
-    <RouterLink to="products">
+    <RouterLink to="products" v-if="selected">
       <div class="sidebar-item">
         <svg fill="#5cb338" viewBox="0 -7.32 143.398 143.398" xmlns="http://www.w3.org/2000/svg">
           <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
@@ -59,10 +72,10 @@
               transform="translate(-522.146 -656.164)"></path>
           </g>
         </svg>
-        <span>Add New Product</span>
+        <span>Manage Products</span>
       </div>
     </RouterLink>
-    <RouterLink to="materials">
+    <RouterLink to="/materials" v-if="selected">
       <div class="sidebar-item">
         <svg
           fill="#5cb338"
@@ -88,10 +101,10 @@
             </g>
           </g>
         </svg>
-        <span>Add New Material</span>
+        <span>Manage Materials</span>
       </div>
     </RouterLink>
-    <RouterLink to="/business-settings">
+    <RouterLink to="/business/settings" v-if="selected">
       <div class="sidebar-item">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
@@ -107,59 +120,78 @@
         <span>Business Settings</span>
       </div>
     </RouterLink>
-    <RouterLink to="/create-new-business">
-      <div class="sidebar-item">
-        <svg fill="#5CB338" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-          <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-          <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-          <g id="SVGRepo_iconCarrier">
-            <title></title>
-            <g data-name="Layer 47" id="Layer_47">
-              <path
-                d="M45,13V3H19V13H3V61H61V13ZM21,5H43V37H21ZM5,15H19V37H5ZM25,59V43h6V59Zm8,0V43h6V59Zm26,0H41V41H23V59H5V39H59ZM45,37V15H59V37Z"></path>
-              <path d="M7,17V35H17V17Zm8,16H9V27h6ZM9,25V19h6v6Z"></path>
-              <path d="M47,17V35H57V17Zm8,16H49V27h6Zm-6-8V19h6v6Z"></path>
-              <path d="M7,49H21V41H7Zm2-6H19v4H9Z"></path>
-              <path d="M7,57H21V51H7Zm2-4H19v2H9Z"></path>
-              <path d="M43,49H57V41H43Zm2-6H55v4H45Z"></path>
-              <path d="M43,57H57V51H43Zm2-4H55v2H45Z"></path>
-              <rect height="4" width="2" x="28" y="49"></rect>
-              <rect height="4" width="2" x="34" y="49"></rect>
-              <rect height="2" width="16" x="24" y="10"></rect>
-              <rect height="2" width="16" x="24" y="20"></rect>
-              <rect height="2" width="16" x="24" y="30"></rect>
-            </g>
-          </g>
-        </svg>
-        <span>Create New Business</span>
-      </div>
-    </RouterLink>
-    <RouterLink to="/show-all-businesses">
-      <div class="sidebar-item">
-        <svg
-          fill="#5CB338"
-          version="1.1"
-          id="Capa_1"
-          xmlns="http://www.w3.org/2000/svg"
-          xmlns:xlink="http://www.w3.org/1999/xlink"
-          viewBox="0 0 333.639 333.639"
-          xml:space="preserve">
-          <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-          <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-          <g id="SVGRepo_iconCarrier">
-            <g>
-              <g>
+    <div class="lower-part">
+      <RouterLink to="/business/new">
+        <div class="sidebar-item">
+          <svg fill="#5CB338" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+            <g id="SVGRepo_iconCarrier">
+              <title></title>
+              <g data-name="Layer 47" id="Layer_47">
                 <path
-                  d="M304.122,131.742c-10.172,0-18.447,8.275-18.447,18.447v68.817c0,9.056-11.499,18.855-20.554,18.855H72.43l31.114-32.33 c3.479-3.482,5.404-8.683,5.404-13.612c0-4.924-1.925-9.891-5.404-13.367c-3.48-3.488-8.116-5.566-13.042-5.566 c-4.924,0-9.56,1.838-13.04,5.32l-62.528,62.492c-1.735,1.711-3.107,3.717-4.059,6.022c-1.895,4.563-1.895,9.56,0,14.136 c0.945,2.281,2.306,4.299,3.99,5.969l61.312,61.309c3.48,3.488,8.116,5.404,13.04,5.404c4.927,0,9.562-1.97,13.042-5.452 c7.194-7.188,7.194-17.63,0-24.824L72.43,274.756h192.691c29.394,0,57.447-26.361,57.447-55.749v-68.817 C322.568,140.011,314.294,131.742,304.122,131.742z M310.271,219.007c0,22.614-22.535,43.451-45.149,43.451H42.739l50.825,49.6 c2.405,2.401,2.405,5.681,0,8.082c-1.198,1.201-2.771,1.501-4.348,1.501c-1.573,0-3.146-0.756-4.347-1.951L23.56,258.303 c-0.58-0.576-1.021-1.285-1.336-2.042c-0.624-1.501-0.624-3.219,0-4.72c0.315-0.75,0.757-1.441,1.336-2.012l62.594-62.6 c2.405-2.402,6.293-2.402,8.695,0c2.405,2.401,2.405,7.506,0,9.908L42.739,250.16h222.382c15.834,0,32.852-15.324,32.852-31.153 v-68.817c0-3.396,2.751-6.149,6.149-6.149s6.148,2.753,6.148,6.149V219.007z"></path>
-                <path
-                  d="M27.421,202.458c10.169,0,18.447-8.28,18.447-18.446v-68.909c0-9.052,7.833-12.52,16.892-12.52H261.05l-30.475,28.532 c-7.188,7.193-7.182,17.597,0.018,24.796c3.489,3.483,8.113,5.074,13.031,5.074s9.541-2.072,13.042-5.573l62.594-62.681 c3.478-3.48,5.404-8.14,5.404-13.066c0-4.924-1.927-9.562-5.404-13.049L257.951,5.333C254.468,1.847,249.833,0,244.909,0 c-4.931,0-9.566,2.072-13.043,5.561c-7.193,7.188-7.193,20.519,0,27.706l30.469,32.423H62.759 c-29.394,0-53.785,20.014-53.785,49.414v68.909C8.974,194.178,17.252,202.458,27.421,202.458z M21.272,115.103 c0-22.617,18.87-37.116,41.487-37.116h229.263l-51.461-53.416c-2.408-2.405-2.408-7.269,0-9.665 c2.407-2.399,6.287-2.892,8.694-0.486l61.31,61.074c2.407,2.405,2.407,6.17,0,8.575l-62.595,62.546 c-1.2,1.198-2.773,1.771-4.347,1.771c-1.58,0-3.153-0.622-4.348-1.822c-2.408-2.402-2.408-4.354,0-6.756l51.455-49.524H62.759 c-15.829,0-29.189,8.983-29.189,24.818v68.909c0,3.398-2.747,6.148-6.149,6.148c-3.401,0-6.149-2.75-6.149-6.148V115.103z"></path>
+                  d="M45,13V3H19V13H3V61H61V13ZM21,5H43V37H21ZM5,15H19V37H5ZM25,59V43h6V59Zm8,0V43h6V59Zm26,0H41V41H23V59H5V39H59ZM45,37V15H59V37Z"></path>
+                <path d="M7,17V35H17V17Zm8,16H9V27h6ZM9,25V19h6v6Z"></path>
+                <path d="M47,17V35H57V17Zm8,16H49V27h6Zm-6-8V19h6v6Z"></path>
+                <path d="M7,49H21V41H7Zm2-6H19v4H9Z"></path>
+                <path d="M7,57H21V51H7Zm2-4H19v2H9Z"></path>
+                <path d="M43,49H57V41H43Zm2-6H55v4H45Z"></path>
+                <path d="M43,57H57V51H43Zm2-4H55v2H45Z"></path>
+                <rect height="4" width="2" x="28" y="49"></rect>
+                <rect height="4" width="2" x="34" y="49"></rect>
+                <rect height="2" width="16" x="24" y="10"></rect>
+                <rect height="2" width="16" x="24" y="20"></rect>
+                <rect height="2" width="16" x="24" y="30"></rect>
               </g>
             </g>
+          </svg>
+          <span>Create New Business</span>
+        </div>
+      </RouterLink>
+      <RouterLink to="/business/all">
+        <div class="sidebar-item">
+          <svg
+            fill="#5CB338"
+            version="1.1"
+            id="Capa_1"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            viewBox="0 0 333.639 333.639"
+            xml:space="preserve">
+            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+            <g id="SVGRepo_iconCarrier">
+              <g>
+                <g>
+                  <path
+                    d="M304.122,131.742c-10.172,0-18.447,8.275-18.447,18.447v68.817c0,9.056-11.499,18.855-20.554,18.855H72.43l31.114-32.33 c3.479-3.482,5.404-8.683,5.404-13.612c0-4.924-1.925-9.891-5.404-13.367c-3.48-3.488-8.116-5.566-13.042-5.566 c-4.924,0-9.56,1.838-13.04,5.32l-62.528,62.492c-1.735,1.711-3.107,3.717-4.059,6.022c-1.895,4.563-1.895,9.56,0,14.136 c0.945,2.281,2.306,4.299,3.99,5.969l61.312,61.309c3.48,3.488,8.116,5.404,13.04,5.404c4.927,0,9.562-1.97,13.042-5.452 c7.194-7.188,7.194-17.63,0-24.824L72.43,274.756h192.691c29.394,0,57.447-26.361,57.447-55.749v-68.817 C322.568,140.011,314.294,131.742,304.122,131.742z M310.271,219.007c0,22.614-22.535,43.451-45.149,43.451H42.739l50.825,49.6 c2.405,2.401,2.405,5.681,0,8.082c-1.198,1.201-2.771,1.501-4.348,1.501c-1.573,0-3.146-0.756-4.347-1.951L23.56,258.303 c-0.58-0.576-1.021-1.285-1.336-2.042c-0.624-1.501-0.624-3.219,0-4.72c0.315-0.75,0.757-1.441,1.336-2.012l62.594-62.6 c2.405-2.402,6.293-2.402,8.695,0c2.405,2.401,2.405,7.506,0,9.908L42.739,250.16h222.382c15.834,0,32.852-15.324,32.852-31.153 v-68.817c0-3.396,2.751-6.149,6.149-6.149s6.148,2.753,6.148,6.149V219.007z"></path>
+                  <path
+                    d="M27.421,202.458c10.169,0,18.447-8.28,18.447-18.446v-68.909c0-9.052,7.833-12.52,16.892-12.52H261.05l-30.475,28.532 c-7.188,7.193-7.182,17.597,0.018,24.796c3.489,3.483,8.113,5.074,13.031,5.074s9.541-2.072,13.042-5.573l62.594-62.681 c3.478-3.48,5.404-8.14,5.404-13.066c0-4.924-1.927-9.562-5.404-13.049L257.951,5.333C254.468,1.847,249.833,0,244.909,0 c-4.931,0-9.566,2.072-13.043,5.561c-7.193,7.188-7.193,20.519,0,27.706l30.469,32.423H62.759 c-29.394,0-53.785,20.014-53.785,49.414v68.909C8.974,194.178,17.252,202.458,27.421,202.458z M21.272,115.103 c0-22.617,18.87-37.116,41.487-37.116h229.263l-51.461-53.416c-2.408-2.405-2.408-7.269,0-9.665 c2.407-2.399,6.287-2.892,8.694-0.486l61.31,61.074c2.407,2.405,2.407,6.17,0,8.575l-62.595,62.546 c-1.2,1.198-2.773,1.771-4.347,1.771c-1.58,0-3.153-0.622-4.348-1.822c-2.408-2.402-2.408-4.354,0-6.756l51.455-49.524H62.759 c-15.829,0-29.189,8.983-29.189,24.818v68.909c0,3.398-2.747,6.148-6.149,6.148c-3.401,0-6.149-2.75-6.149-6.148V115.103z"></path>
+                </g>
+              </g>
+            </g>
+          </svg>
+          <span>Load Businesses</span>
+        </div>
+      </RouterLink>
+      <hr />
+      <div class="collapse">
+        <svg
+          :class="{ rotated: collapsed }"
+          @click="toggleCollapse"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg">
+          <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+          <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+          <g id="SVGRepo_iconCarrier">
+            <path
+              d="M14.2893 5.70708C13.8988 5.31655 13.2657 5.31655 12.8751 5.70708L7.98768 10.5993C7.20729 11.3805 7.2076 12.6463 7.98837 13.427L12.8787 18.3174C13.2693 18.7079 13.9024 18.7079 14.293 18.3174C14.6835 17.9269 14.6835 17.2937 14.293 16.9032L10.1073 12.7175C9.71678 12.327 9.71678 11.6939 10.1073 11.3033L14.2893 7.12129C14.6799 6.73077 14.6799 6.0976 14.2893 5.70708Z"
+              fill="#5CB338"></path>
           </g>
         </svg>
-        <span>Load Businesses</span>
       </div>
-    </RouterLink>
+    </div>
   </div>
 </template>
 
@@ -168,9 +200,9 @@
   display: flex;
   flex-direction: column;
   width: 20rem;
-  height: 100vh;
   padding: 2rem;
   gap: 2rem;
+  transition: all 0.25s ease;
 
   h2 {
     font-size: 2.5rem;
@@ -222,5 +254,83 @@
       }
     }
   }
+
+  .lower-part {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    hr {
+      border: none;
+      height: 1px;
+      background-color: #e0e0e0;
+      margin-top: 1rem;
+      width: 100%;
+    }
+
+    .collapse {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      svg {
+        width: 3rem;
+        height: 3rem;
+        cursor: pointer;
+        border-radius: 50%;
+        transition: transform 0.25s ease, background-color 0.2s ease;
+
+        &:hover {
+          background-color: #5cb338;
+          path {
+            fill: white;
+          }
+        }
+
+        &.rotated {
+          transform: rotate(180deg);
+        }
+      }
+    }
+  }
+}
+
+/* Collapsed state styles */
+.sidebar-container.collapsed {
+  flex: none;
+  width: 6.4rem;
+  padding: 2rem 1rem;
+  transition: width 0.25s ease, padding 0.25s ease;
+}
+
+.sidebar-container.collapsed h2 {
+  display: none;
+}
+
+.sidebar-container.collapsed a {
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-container.collapsed .sidebar-item {
+  justify-content: center;
+  padding: 0.8rem;
+  border-radius: 1rem;
+  width: unset;
+}
+
+.sidebar-container.collapsed span {
+  display: none;
+}
+
+.sidebar-container.collapsed svg {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.sidebar-container.collapsed .collapse {
+  width: unset;
 }
 </style>

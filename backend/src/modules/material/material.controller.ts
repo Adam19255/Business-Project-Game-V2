@@ -39,6 +39,16 @@ export class MaterialController {
     return material;
   }
 
+  @Get('/business/:businessId')
+  async getMaterialsForBusiness(@Param('businessId') businessId: string) {
+    if (!mongoose.Types.ObjectId.isValid(businessId)) {
+      throw new HttpException('Invalid Business ID', 400);
+    }
+    const materials =
+      await this.materialService.getMaterialsForBusiness(businessId);
+    return materials;
+  }
+
   @Patch(':id')
   async updateMaterial(
     @Param('id') id: string,

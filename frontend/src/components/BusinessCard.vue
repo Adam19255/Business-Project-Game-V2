@@ -12,12 +12,12 @@ const businessStore = useBusinessStore();
 
 async function loadBusiness() {
   if (!props.business || !props.business._id) {
-    console.error("No business data provided to BusinessDetails component");
+    console.error("No business data provided to BusinessCard component");
     return;
   }
   try {
     await businessStore.loadBusiness(props.business._id);
-    router.push({ name: "BusinessSettings" });
+    router.push({ name: "Dashboard" });
   } catch (err) {
     console.error("Failed to load business:", err);
     alert("Failed to load business. See console for details.");
@@ -32,7 +32,7 @@ async function loadBusiness() {
       alt="Business Image"
       class="business-image" />
     <div class="business-details">
-      <h2>{{ props.business.name }}</h2>
+      <h2>{{ props.business.name.length > 22 ? props.business.name.slice(0, 22) + "..." : props.business.name }}</h2>
       <p>Production Slots: {{ props.business.productionSlotsCount }}</p>
       <p>Delivery Time: {{ props.business.deliveryTime }} hours</p>
       <p>Products Count: {{ props.business.products.length }}</p>
