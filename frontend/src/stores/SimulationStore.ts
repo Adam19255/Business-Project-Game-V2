@@ -18,6 +18,7 @@ export interface Customer {
 
 export interface Queue {
   id: ID;
+  number: number;
   customers: Customer[];
   isOpen: boolean;
 }
@@ -90,9 +91,9 @@ export const useSimulationStore = defineStore("simulation", () => {
     activeBusinessId.value = businessId;
     // initialize 3 queues by default
     queues.value = [
-      { id: "q1", customers: [], isOpen: true },
-      { id: "q2", customers: [], isOpen: true },
-      { id: "q3", customers: [], isOpen: true },
+      { id: "q1", number: 1, customers: [], isOpen: true },
+      { id: "q2", number: 2, customers: [], isOpen: true },
+      { id: "q3", number: 3, customers: [], isOpen: false },
     ];
     creationQueue.value = [];
     productionSlots.value = [];
