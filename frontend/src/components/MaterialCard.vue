@@ -18,7 +18,7 @@ const emit = defineEmits<{
       class="material-image" />
     <div class="material-details">
       <h2>{{ props.material.name.length > 22 ? props.material.name.slice(0, 22) + "..." : props.material.name }}</h2>
-      <p>Time Required: {{ props.material.timeRequired }}</p>
+      <p>Time Required: {{ props.material.timeRequired }} seconds</p>
       <p>Stock: {{ props.material.stock }}</p>
     </div>
     <div class="action-buttons">

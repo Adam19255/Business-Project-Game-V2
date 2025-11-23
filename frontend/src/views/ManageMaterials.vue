@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { useMaterialStore } from "@/stores/MaterialStore";
 import { useBusinessStore } from "@/stores/BusinessStore";
 import MaterialCard from "@/components/MaterialCard.vue";
@@ -25,11 +25,6 @@ const modalVisible = ref(false);
 
 const deleteModalVisible = ref(false);
 const deleteTargetId = ref<string | number | null>(null);
-
-onMounted(async () => {
-  if (!selected.value) return;
-  await materialStore.fetchMaterialsForBusiness(selected.value._id as string);
-});
 
 async function submitNewMaterial() {
   if (!newItemDraft.value.name || newItemDraft.value.timeRequired == null || newItemDraft.value.stock == null) {
@@ -137,7 +132,7 @@ async function confirmDelete() {
         <input id="name" v-model="newItemDraft.name" type="text" required />
       </div>
       <div class="form-item">
-        <label for="timeRequired">Time Required:</label>
+        <label for="timeRequired">Time Required (seconds):</label>
         <input id="timeRequired" v-model.number="newItemDraft.timeRequired" type="number" required />
       </div>
       <div class="form-item">
@@ -161,7 +156,7 @@ async function confirmDelete() {
       </div>
 
       <div class="form-item">
-        <label for="timeRequired">Time Required:</label>
+        <label for="timeRequired">Time Required (seconds):</label>
         <input id="timeRequired" v-model.number="draft.timeRequired" type="number" required />
       </div>
       <div class="form-item">

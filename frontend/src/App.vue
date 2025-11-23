@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import Sidebar from "./views/Sidebar.vue";
+import Sidebar from "./views/sidebar.vue";
+import { onMounted } from "vue";
+import { useBusinessStore } from "@/stores/BusinessStore";
+
+const businessStore = useBusinessStore();
+
+onMounted(() => {
+  businessStore.fetchBusinesses();
+});
 </script>
 
 <template>

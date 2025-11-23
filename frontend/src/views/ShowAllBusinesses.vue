@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
 import { useBusinessStore } from "../stores/BusinessStore";
 import BusinessCard from "../components/BusinessCard.vue";
 
 const businessStore = useBusinessStore();
-
-onMounted(() => {
-  businessStore.fetchBusinesses();
-});
 </script>
 
 <template>

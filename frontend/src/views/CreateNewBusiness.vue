@@ -83,7 +83,7 @@ function clearForm() {
             min="0" />
         </div>
         <div class="form-item">
-          <label for="deliveryTime">Delivery Time (hours):</label>
+          <label for="deliveryTime">Delivery Time (seconds):</label>
           <input
             v-model.number="form.deliveryTime"
             type="number"

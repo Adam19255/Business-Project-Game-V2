@@ -11,8 +11,12 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      name: "Dashboard",
-      component: Dashboard,
+      redirect: "/business/all",
+    },
+    {
+      path: "/business/all",
+      name: "ShowAllBusinesses",
+      component: ShowAllBusinesses,
     },
     {
       path: "/business/new",
@@ -25,9 +29,9 @@ const router = createRouter({
       component: BusinessSettings,
     },
     {
-      path: "/business/all",
-      name: "ShowAllBusinesses",
-      component: ShowAllBusinesses,
+      path: "/materials",
+      name: "ManageMaterials",
+      component: ManageMaterials,
     },
     {
       path: "/products",
@@ -35,9 +39,9 @@ const router = createRouter({
       component: ManageProducts,
     },
     {
-      path: "/materials",
-      name: "ManageMaterials",
-      component: ManageMaterials,
+      path: "/dashboard",
+      name: "Dashboard",
+      component: Dashboard,
     },
   ],
 });

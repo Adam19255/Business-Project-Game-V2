@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
+import { ref, computed } from "vue";
 import { useProductStore } from "@/stores/ProductStore";
 import { useBusinessStore } from "@/stores/BusinessStore";
 import { useMaterialStore } from "@/stores/MaterialStore";
@@ -33,12 +33,6 @@ const deleteModalVisible = ref(false);
 const deleteTargetId = ref<string | number | null>(null);
 const editingId = ref<string | null>(null);
 let productName: string = "";
-
-onMounted(async () => {
-  if (!selected.value) return;
-  await productStore.fetchProductsForBusiness(selected.value._id as string);
-  await materialStore.fetchMaterialsForBusiness(selected.value._id as string);
-});
 
 async function submitNewProduct() {
   if (

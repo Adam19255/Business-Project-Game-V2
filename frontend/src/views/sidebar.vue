@@ -16,7 +16,7 @@ function toggleCollapse() {
   <div :class="['sidebar-container', { collapsed }]">
     <h2 v-if="!selected">Welcome</h2>
     <svg
-      v-if="!collapsed"
+      v-if="!collapsed && selected"
       xmlns="http://www.w3.org/2000/svg"
       id="Compie_Horizonal"
       width="159.553"
@@ -78,7 +78,7 @@ function toggleCollapse() {
           transform="translate(14.194 3.901) rotate(-45)" />
       </g>
     </svg>
-    <svg v-else class="business-logo">
+    <svg v-else-if="collapsed" class="business-logo">
       <g id="Group_33" data-name="Group 33" transform="translate(0 0)">
         <path
           id="Path_27"
@@ -93,7 +93,7 @@ function toggleCollapse() {
           transform="translate(14.194 3.901) rotate(-45)" />
       </g>
     </svg>
-    <RouterLink to="/" v-if="selected">
+    <RouterLink to="/dashboard" v-if="selected">
       <div class="sidebar-item">
         <svg viewBox="0 -0.5 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g id="SVGRepo_bgCarrier" stroke-width="0"></g>

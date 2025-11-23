@@ -89,7 +89,7 @@ async function confirmDelete() {
         <input id="productionSlotsCount" type="number" v-model.number="form.productionSlotsCount" min="0" />
       </div>
       <div class="form-item">
-        <label for="deliveryTime">Delivery Time (hours):</label>
+        <label for="deliveryTime">Delivery Time (seconds):</label>
         <input id="deliveryTime" type="number" v-model.number="form.deliveryTime" min="0" />
       </div>
 

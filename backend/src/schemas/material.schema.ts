@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
+
+export type MaterialDocument = mongoose.HydratedDocument<Material>;
 
 @Schema()
 export class Material {

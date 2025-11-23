@@ -34,7 +34,7 @@ async function loadBusiness() {
     <div class="business-details">
       <h2>{{ props.business.name.length > 22 ? props.business.name.slice(0, 22) + "..." : props.business.name }}</h2>
       <p>Production Slots: {{ props.business.productionSlotsCount }}</p>
-      <p>Delivery Time: {{ props.business.deliveryTime }} hours</p>
+      <p>Delivery Time: {{ props.business.deliveryTime }} seconds</p>
     </div>
     <button @click="loadBusiness" :class="props.business.id === 'preview' ? 'hide' : ''">Load Business</button>
   </div>

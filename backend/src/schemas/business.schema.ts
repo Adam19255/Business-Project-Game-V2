@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 
+export type BusinessDocument = mongoose.HydratedDocument<Business>;
+
 @Schema()
 export class Business {
   @Prop({ unique: true, required: true })

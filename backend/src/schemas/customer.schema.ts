@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 export enum CustomerState {
   WAITING = 'WAITING',
@@ -10,6 +10,8 @@ export enum CustomerState {
   REORDERING = 'REORDERING',
   CANCELING = 'CANCELING',
 }
+
+export type CustomersDocument = mongoose.HydratedDocument<Customers>;
 
 @Schema()
 export class Customers {
