@@ -4,7 +4,7 @@ import { ref } from "vue";
 import { useBusinessStore } from "./BusinessStore";
 import { useProductStore } from "./ProductStore";
 import { useMaterialStore } from "./MaterialStore";
-import { postEvent } from "@/services/api";
+// import { postEvent } from "@/services/api";
 
 type ID = string;
 
@@ -173,11 +173,11 @@ export const useSimulationStore = defineStore("simulation", () => {
     // complete deliveries
     const completed = deliveries.value.filter((delivery) => delivery.timeLeft === 0);
     for (const c of completed) {
-      postEvent({
-        time: Date.now(),
-        type: "DELIVERY_COMPLETE",
-        payload: { orderId: c.orderId, productId: c.productId },
-      }).catch(() => {});
+      // postEvent({
+      //   time: Date.now(),
+      //   type: "DELIVERY_COMPLETE",
+      //   payload: { orderId: c.orderId, productId: c.productId },
+      // }).catch(() => {});
     }
     deliveries.value = deliveries.value.filter((d) => d.timeLeft > 0);
 
@@ -261,33 +261,33 @@ export const useSimulationStore = defineStore("simulation", () => {
     if (usedSlots < (business.productionSlotsCount ?? 0)) {
       productionSlots.value.push(prodSlot);
       emitOrderResult(customer.id, true, "ORDER_ACCEPTED_AND_STARTED", { orderId });
-      postEvent({
-        time: Date.now(),
-        type: "ORDER_ACCEPTED",
-        payload: { orderId, productId: product._id, customerId: customer.id },
-      }).catch(() => {});
+      // postEvent({
+      //   time: Date.now(),
+      //   type: "ORDER_ACCEPTED",
+      //   payload: { orderId, productId: product._id, customerId: customer.id },
+      // }).catch(() => {});
     } else {
       // put into creationQueue (FIFO)
       creationQueue.value.push(prodSlot);
       emitOrderResult(customer.id, true, "ORDER_QUEUED", { orderId });
-      postEvent({
-        time: Date.now(),
-        type: "ORDER_QUEUED",
-        payload: { orderId, productId: product._id, customerId: customer.id },
-      }).catch(() => {});
+      // postEvent({
+      //   time: Date.now(),
+      //   type: "ORDER_QUEUED",
+      //   payload: { orderId, productId: product._id, customerId: customer.id },
+      // }).catch(() => {});
     }
   }
 
   function emitOrderResult(customerId: ID, success: boolean, reason: string, extra?: any) {
-    postEvent({
-      time: Date.now(),
-      type: success ? "ORDER_SUCCESS" : "ORDER_FAILED",
-      payload: {
-        customerId,
-        reason,
-        ...extra,
-      },
-    }).catch(() => {});
+    // postEvent({
+    //   time: Date.now(),
+    //   type: success ? "ORDER_SUCCESS" : "ORDER_FAILED",
+    //   payload: {
+    //     customerId,
+    //     reason,
+    //     ...extra,
+    //   },
+    // }).catch(() => {});
   }
 
   function startDelivery(orderId: ID, productId: ID) {
@@ -303,11 +303,11 @@ export const useSimulationStore = defineStore("simulation", () => {
     // remove production slot with this orderId
     productionSlots.value = productionSlots.value.filter((p) => p.orderId !== orderId);
 
-    postEvent({
-      time: Date.now(),
-      type: "PRODUCTION_FINISHED",
-      payload: { orderId, productId },
-    }).catch(() => {});
+    // postEvent({
+    //   time: Date.now(),
+    //   type: "PRODUCTION_FINISHED",
+    //   payload: { orderId, productId },
+    // }).catch(() => {});
   }
 
   function fillProductionSlots() {
@@ -321,11 +321,11 @@ export const useSimulationStore = defineStore("simulation", () => {
       const next = creationQueue.value.shift();
       if (!next) break;
       productionSlots.value.push(next);
-      postEvent({
-        time: Date.now(),
-        type: "PRODUCTION_STARTED_FROM_QUEUE",
-        payload: { orderId: next.orderId, productId: next.productId },
-      }).catch(() => {});
+      // postEvent({
+      //   time: Date.now(),
+      //   type: "PRODUCTION_STARTED_FROM_QUEUE",
+      //   payload: { orderId: next.orderId, productId: next.productId },
+      // }).catch(() => {});
     }
   }
 
