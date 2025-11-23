@@ -110,7 +110,7 @@ export const useSimulationStore = defineStore("simulation", () => {
         first.orderingTimeLeft = Math.max(0, first.orderingTimeLeft - 1);
         if (first.orderingTimeLeft === 0) {
           // attempt to fulfill order
-          _attemptFulfillOrder(queue, first);
+          attemptFulfillOrder(queue, first);
           // remove customer from queue whether success or failure
           queue.customers.shift();
         }
@@ -187,7 +187,7 @@ export const useSimulationStore = defineStore("simulation", () => {
     saveSnapshot();
   }
 
-  function _attemptFulfillOrder(queue: Queue, customer: Customer) {
+  function attemptFulfillOrder(queue: Queue, customer: Customer) {
     // Simplified: single product orders for now (customer.order[0])
     const productId = customer.order[0];
     const product = productStore.products.find((p) => String(p._id) === String(productId));
@@ -279,6 +279,7 @@ export const useSimulationStore = defineStore("simulation", () => {
   }
 
   function emitOrderResult(customerId: ID, success: boolean, reason: string, extra?: any) {
+    console.log(`Order for customer ${customerId} ${success ? "succeeded" : "failed"}: ${reason}`);
     // postEvent({
     //   time: Date.now(),
     //   type: success ? "ORDER_SUCCESS" : "ORDER_FAILED",
