@@ -14,23 +14,8 @@ export class Business {
   @Prop({ required: true })
   deliveryTime: number;
 
-  @Prop({
-    type: [
-      {
-        id: String,
-        isActive: Boolean,
-        number: Number,
-        customersId: [String],
-      },
-    ],
-    default: [],
-  })
-  queues: {
-    id: string;
-    isActive: boolean;
-    number: number;
-    customersId: string[];
-  }[];
+  @Prop({ required: true })
+  queueCount: number;
 }
 
 export const BusinessSchema = SchemaFactory.createForClass(Business);
