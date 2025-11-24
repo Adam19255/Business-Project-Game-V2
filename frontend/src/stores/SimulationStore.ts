@@ -70,34 +70,6 @@ export const useSimulationStore = defineStore("simulation", () => {
     return businessStore.selectedBusiness;
   }
 
-  function saveSnapshot() {
-    const payload = {
-      activeBusinessId: activeBusinessId.value,
-      queues: queues.value,
-      creationQueue: creationQueue.value,
-      productionSlots: productionSlots.value,
-      deliveries: deliveries.value,
-    };
-    localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(payload));
-  }
-
-  function loadSnapshot() {
-    const raw = localStorage.getItem(SNAPSHOT_KEY);
-    if (!raw) return false;
-    try {
-      const parsed = JSON.parse(raw);
-      activeBusinessId.value = parsed.activeBusinessId ?? null;
-      queues.value = parsed.queues ?? [];
-      creationQueue.value = parsed.creationQueue ?? [];
-      productionSlots.value = parsed.productionSlots ?? [];
-      deliveries.value = parsed.deliveries ?? [];
-      return true;
-    } catch (e) {
-      console.warn("Failed to parse simulation snapshot", e);
-      return false;
-    }
-  }
-
   // initialize simulation state for selected business
   function initForBusiness(businessId: string | number) {
     activeBusinessId.value = businessId;
@@ -112,7 +84,6 @@ export const useSimulationStore = defineStore("simulation", () => {
     creationQueue.value = [];
     productionSlots.value = [];
     deliveries.value = [];
-    saveSnapshot();
   }
 
   // tick logic: call every second
@@ -201,8 +172,6 @@ export const useSimulationStore = defineStore("simulation", () => {
 
     // 4. try to move waiting creation queue into production slots (if business has free slots)
     fillProductionSlots();
-
-    saveSnapshot();
   }
 
   async function attemptFulfillOrder(queue: Queue, customer: Customer) {
@@ -403,15 +372,6 @@ export const useSimulationStore = defineStore("simulation", () => {
     }
   }
 
-  function clearSimulation() {
-    activeBusinessId.value = null;
-    queues.value = [];
-    creationQueue.value = [];
-    productionSlots.value = [];
-    deliveries.value = [];
-    saveSnapshot();
-  }
-
   // add customer to a specific queue (or automatically to shortest)
   function insertIntoQueue(q: Queue, cust: Customer) {
     // insertion index: we don't skip the first person (index 0). Insert after first,
@@ -446,7 +406,7 @@ export const useSimulationStore = defineStore("simulation", () => {
       const q = queues.value.find((x) => x.id === queueId);
       if (q) {
         insertIntoQueue(q, c);
-        saveSnapshot();
+
         return c;
       }
     }
@@ -456,7 +416,6 @@ export const useSimulationStore = defineStore("simulation", () => {
 
     const shortest = openQueues.reduce((min, q) => (q.customers.length < min.customers.length ? q : min));
     insertIntoQueue(shortest, c);
-    saveSnapshot();
     return c;
   }
 
@@ -475,7 +434,7 @@ export const useSimulationStore = defineStore("simulation", () => {
     const openQueues = queues.value.filter((q) => q.isOpen);
     if (openQueues.length === 0) {
       console.warn("No open queues to rebalance into — dropping customers");
-      saveSnapshot();
+
       return;
     }
 
@@ -486,8 +445,6 @@ export const useSimulationStore = defineStore("simulation", () => {
       if (target) insertIntoQueue(target, cust);
       idx++;
     }
-
-    saveSnapshot();
   }
 
   // add random customer ordering random product
@@ -543,7 +500,6 @@ export const useSimulationStore = defineStore("simulation", () => {
 
     // otherwise initialize fresh simulation for the selected business
     initForBusiness(selectedBusiness._id as string | number);
-    saveSnapshot();
   }
 
   function toggleQueueOpen(queueId: String | number) {
@@ -563,7 +519,6 @@ export const useSimulationStore = defineStore("simulation", () => {
     queues.value.push(q);
     // rebalance to include new queue
     rebalanceQueues();
-    saveSnapshot();
     return q;
   }
 
@@ -576,8 +531,6 @@ export const useSimulationStore = defineStore("simulation", () => {
     deliveries,
 
     // actions
-    loadSnapshot,
-    saveSnapshot,
     initForBusiness,
     initFromSelectedBusiness,
     enqueueCustomer,
@@ -586,7 +539,6 @@ export const useSimulationStore = defineStore("simulation", () => {
     addQueue,
     startTicking,
     stopTicking,
-    clearSimulation,
     tick,
     toggleQueueOpen,
   };
