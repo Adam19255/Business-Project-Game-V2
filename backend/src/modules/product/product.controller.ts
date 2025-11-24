@@ -34,8 +34,8 @@ export class ProductController {
         400,
       );
     }
-    for (const matId of createProductDto.materials) {
-      if (!mongoose.Types.ObjectId.isValid(matId)) {
+    for (const materialId of createProductDto.materials) {
+      if (!mongoose.Types.ObjectId.isValid(materialId)) {
         throw new HttpException('Invalid Material ID in materials array', 400);
       }
     }
@@ -74,6 +74,22 @@ export class ProductController {
     if (!product) {
       throw new HttpException('Product not found', 404);
     }
+
+    if (
+      !Array.isArray(updateProductDto.materials) ||
+      updateProductDto.materials.length === 0
+    ) {
+      throw new HttpException(
+        'Product must include at least one material',
+        400,
+      );
+    }
+    for (const materialId of updateProductDto.materials) {
+      if (!mongoose.Types.ObjectId.isValid(materialId)) {
+        throw new HttpException('Invalid Material ID in materials array', 400);
+      }
+    }
+
     return this.productService.updateProduct(id, updateProductDto);
   }
 

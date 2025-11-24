@@ -11,5 +11,9 @@ export class updateBusinessDto {
 
   @IsOptional()
   @IsNumber()
+  queueCount?: number;
+
+  @IsOptional()
+  @IsNumber()
   deliveryTime?: number;
 }

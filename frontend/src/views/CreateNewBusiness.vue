@@ -6,6 +6,7 @@ import BusinessCard from "../components/BusinessCard.vue";
 
 interface NewBusinessForm {
   name: string;
+  queueCount: number;
   productionSlotsCount: number;
   deliveryTime: number;
 }
@@ -15,6 +16,7 @@ const businessStore = useBusinessStore();
 
 const form = reactive<NewBusinessForm>({
   name: "",
+  queueCount: 0,
   productionSlotsCount: 0,
   deliveryTime: 0,
 });
@@ -24,6 +26,7 @@ async function createBusiness() {
 
   const payload = {
     name: form.name.trim(),
+    queueCount: Number(form.queueCount),
     productionSlotsCount: Number(form.productionSlotsCount),
     deliveryTime: Number(form.deliveryTime),
   };
@@ -48,6 +51,7 @@ function clearForm() {
   if (fileInput) {
     fileInput.value = "";
   }
+  form.queueCount = 0;
   form.productionSlotsCount = 0;
   form.deliveryTime = 0;
 }
@@ -71,6 +75,10 @@ function clearForm() {
             name="businessName"
             placeholder="Business Name"
             required />
+        </div>
+        <div class="form-item">
+          <label for="queueCount">Queue Count:</label>
+          <input v-model.number="form.queueCount" type="number" id="queueCount" name="queueCount" required min="0" />
         </div>
         <div class="form-item">
           <label for="productionSlotsCount">Production Slots Count:</label>

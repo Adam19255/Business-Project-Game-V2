@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 export type BusinessDocument = mongoose.HydratedDocument<Business>;
 
@@ -14,11 +14,23 @@ export class Business {
   @Prop({ required: true })
   deliveryTime: number;
 
-  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }] })
-  products: mongoose.Types.ObjectId[];
-
-  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Queue' }] })
-  queues: mongoose.Types.ObjectId[];
+  @Prop({
+    type: [
+      {
+        id: String,
+        isActive: Boolean,
+        number: Number,
+        customersId: [String],
+      },
+    ],
+    default: [],
+  })
+  queues: {
+    id: string;
+    isActive: boolean;
+    number: number;
+    customersId: string[];
+  }[];
 }
 
 export const BusinessSchema = SchemaFactory.createForClass(Business);

@@ -13,6 +13,7 @@ const deleteTargetId = ref<string | number | null>(null);
 
 const form = reactive({
   name: "",
+  queueCount: 0,
   productionSlotsCount: 0,
   deliveryTime: 0,
 });
@@ -22,6 +23,7 @@ watch(
   (b) => {
     if (b) {
       form.name = b.name ?? "";
+      form.queueCount = b.queueCount ?? 0;
       form.productionSlotsCount = b.productionSlotsCount ?? 0;
       form.deliveryTime = b.deliveryTime ?? 0;
     }
@@ -34,6 +36,7 @@ async function save() {
 
   const payload = {
     name: form.name.trim(),
+    queueCount: Number(form.queueCount),
     productionSlotsCount: Number(form.productionSlotsCount),
     deliveryTime: Number(form.deliveryTime),
   };
@@ -50,6 +53,7 @@ async function save() {
 function reset() {
   if (!selected.value) return;
   form.name = selected.value.name ?? "";
+  form.queueCount = selected.value.queueCount ?? 0;
   form.productionSlotsCount = selected.value.productionSlotsCount ?? 0;
   form.deliveryTime = selected.value.deliveryTime ?? 0;
 }
@@ -83,6 +87,10 @@ async function confirmDelete() {
       <div class="form-item">
         <label for="name">Business Name:</label>
         <input id="name" type="text" v-model="form.name" />
+      </div>
+      <div class="form-item">
+        <label for="queueCount">Queue Count:</label>
+        <input id="queueCount" type="number" v-model.number="form.queueCount" min="0" />
       </div>
       <div class="form-item">
         <label for="productionSlotsCount">Production Slots Count:</label>

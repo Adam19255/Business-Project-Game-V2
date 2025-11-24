@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import ProductPlaceholder from "../assets/product-placeholder.jpg";
-import { defineProps, defineEmits } from "vue";
 
 const props = defineProps<{ product: any }>();
 const emit = defineEmits<{

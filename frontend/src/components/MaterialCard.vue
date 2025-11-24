@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import NoImage from "@/assets/no-image.png";
 import MaterialPlaceholder from "@/assets/material-placeholder.jpg";
-import { defineProps, defineEmits } from "vue";
 
 const props = defineProps<{ material: any }>();
 const emit = defineEmits<{

@@ -12,4 +12,8 @@ export class CreateBusinessDto {
   @IsNotEmpty()
   @IsNumber()
   deliveryTime: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  queueCount: number;
 }

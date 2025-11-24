@@ -6,6 +6,7 @@ import { useProductStore } from "./ProductStore";
 export interface Business {
   _id?: string | number;
   name: string;
+  queueCount: number;
   productionSlotsCount: number;
   deliveryTime: number;
 }
