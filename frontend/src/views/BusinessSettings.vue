@@ -23,7 +23,7 @@ watch(
   (b) => {
     if (b) {
       form.name = b.name ?? "";
-      form.queueCount = b.queueCount ?? 0;
+      form.queueCount = b.queues?.length ?? 0;
       form.productionSlotsCount = b.productionSlotsCount ?? 0;
       form.deliveryTime = b.deliveryTime ?? 0;
     }
@@ -53,7 +53,7 @@ async function save() {
 function reset() {
   if (!selected.value) return;
   form.name = selected.value.name ?? "";
-  form.queueCount = selected.value.queueCount ?? 0;
+  form.queueCount = selected.value.queues?.length ?? 0;
   form.productionSlotsCount = selected.value.productionSlotsCount ?? 0;
   form.deliveryTime = selected.value.deliveryTime ?? 0;
 }

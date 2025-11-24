@@ -6,7 +6,7 @@ import { useProductStore } from "./ProductStore";
 export interface Business {
   _id?: string | number;
   name: string;
-  queueCount: number;
+  queues?: { id: string; isActive: boolean; number: number; customersId: string[] }[];
   productionSlotsCount: number;
   deliveryTime: number;
 }
