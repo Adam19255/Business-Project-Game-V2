@@ -49,7 +49,7 @@ export const useSimulationStore = defineStore("simulation", () => {
 
   const activeBusinessId = ref<string | number | null>(null);
   const queues = ref<Queue[]>([]);
-  const creationQueue = ref<ProductionSlot[]>([]); // waiting for free slot
+  const creationQueue = ref<ProductionSlot[]>([]);
   const productionSlots = ref<ProductionSlot[]>([]);
   const deliveries = ref<DeliveryItem[]>([]);
   const tickHandle = ref<number | null>(null);
@@ -89,12 +89,14 @@ export const useSimulationStore = defineStore("simulation", () => {
   // initialize simulation state for selected business
   function initForBusiness(businessId: string | number) {
     activeBusinessId.value = businessId;
-    // initialize 3 queues by default
-    queues.value = [
-      { id: "q1", number: 1, customers: [], isOpen: true },
-      { id: "q2", number: 2, customers: [], isOpen: true },
-      { id: "q3", number: 3, customers: [], isOpen: false },
-    ];
+    // initialize 3 queues by queueCount of business
+    const business = businessStore.businesses.find((b) => String(b._id) === String(businessId));
+    const queueCount = business?.queueCount ?? 3;
+    queues.value = [];
+    for (let i = 1; i <= queueCount; i++) {
+      queues.value.push({ id: `q${i}`, number: i, customers: [], isOpen: i <= queueCount });
+    }
+
     creationQueue.value = [];
     productionSlots.value = [];
     deliveries.value = [];
