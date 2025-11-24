@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { useSimulationStore } from "@/stores/SimulationStore";
+
+const simulation = useSimulationStore();
 const props = defineProps({
   queue: {
-    type: Object as () => { number: number; isOpen: boolean; customers: any[] },
+    type: Object as () => { id: String | number; number: number; isOpen: boolean; customers: any[] },
     required: true,
   },
 });
@@ -11,7 +14,9 @@ const props = defineProps({
   <div class="queue-container">
     <p>
       Queue #{{ props.queue.number }}
-      <span :class="props.queue.isOpen ? 'open' : 'closed'">{{ props.queue.isOpen ? "Open" : "Closed" }}</span>
+      <span :class="props.queue.isOpen ? 'open' : 'closed'" @click="simulation.toggleQueueOpen(props.queue.id)">{{
+        props.queue.isOpen ? "Open" : "Closed"
+      }}</span>
     </p>
     <div class="cash-register-container">
       <svg
@@ -63,9 +68,14 @@ const props = defineProps({
         </g>
       </svg>
       <div class="queue">
-        <div class="customer-container" v-for="customer in props.queue.customers" :key="customer.id">
-          <div class="time-left">{{ customer.orderingTimeLeft }}</div>
-        </div>
+          <div
+            class="customer-container"
+            v-for="customer in props.queue.customers"
+            :key="customer.id"
+            :class="{ 'priority-1': customer.priority === 1, 'priority-2': customer.priority === 2 }"
+          >
+            <div class="time-left">{{ customer.orderingTimeLeft }}</div>
+          </div>
       </div>
     </div>
   </div>
@@ -90,6 +100,7 @@ const props = defineProps({
     font-weight: bold;
     border-radius: 0.5rem;
     background-color: #66c880;
+    cursor: pointer;
   }
   .closed {
     padding: 0.7rem 1rem 0.6rem;
@@ -97,6 +108,7 @@ const props = defineProps({
     font-weight: bold;
     border-radius: 0.5rem;
     background-color: #e74c3c;
+    cursor: pointer;
   }
 }
 .cash-register-container {
@@ -124,6 +136,14 @@ const props = defineProps({
     height: 3rem;
     border-radius: 50%;
     background-color: #66c880;
+
+    &.priority-1 {
+      background-color: #ff9f43; /* orange */
+    }
+
+    &.priority-2 {
+      background-color: #ffd700; /* gold */
+    }
 
     .time-left {
       position: absolute;

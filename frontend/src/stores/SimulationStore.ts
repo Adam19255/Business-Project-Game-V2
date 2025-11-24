@@ -5,7 +5,6 @@ import { useBusinessStore } from "./BusinessStore";
 import { useProductStore } from "./ProductStore";
 import { useMaterialStore } from "./MaterialStore";
 import axios from "axios";
-// import { postEvent } from "@/services/api";
 
 type ID = string;
 
@@ -16,6 +15,7 @@ export interface Customer {
   priority: 0 | 1 | 2;
   order: ID[]; // product IDs
   orderingTimeLeft: number; // seconds left to finish ordering
+  arrivalTime?: number;
   retries?: number;
 }
 
@@ -41,14 +41,6 @@ export interface DeliveryItem {
   orderId: ID;
   productId: ID;
   timeLeft: number;
-}
-
-interface SimulationSnapshot {
-  activeBusinessId: string | number | null;
-  queues: Queue[];
-  creationQueue: ProductionSlot[];
-  productionSlots: ProductionSlot[];
-  deliveries: DeliveryItem[];
 }
 
 interface OrderEventPayload {
@@ -214,125 +206,132 @@ export const useSimulationStore = defineStore("simulation", () => {
   }
 
   async function attemptFulfillOrder(queue: Queue, customer: Customer) {
-    // Simplified: single product orders for now (customer.order[0])
-    const productId = customer.order[0];
-    const product = productStore.products.find((p) => String(p._id) === String(productId));
-    if (!product) {
-      // product does not exist -> fail
-      emitOrderResult({
+    // Support multi-product orders.
+    const productIds = customer.order ?? [];
+    if (!productIds.length) {
+      await emitOrderResult({
         businessId: businessStore.selectedBusiness?._id,
         customerId: customer.id,
         success: false,
-        reason: "PRODUCT_NOT_FOUND",
+        reason: "NO_PRODUCTS_IN_ORDER",
         productIds: [],
         extra: {},
       });
       return;
     }
 
-    // Gather material objects
-    const requiredMaterialIds = product.materials ?? [];
-    const missing: string[] = [];
-    for (const materialId of requiredMaterialIds) {
-      const material = materialStore.materials.find((m) => String(m._id) === String(materialId));
-      if (!material || (material.stock ?? 0) <= 0) {
-        missing.push(materialId);
+    // Validate all products exist and have materials available (basic check: all materials in stock)
+    const missingAny: { productId: ID; missingMaterials: string[] }[] = [];
+    const productsToProcess: any[] = [];
+    for (const pid of productIds) {
+      const product = productStore.products.find((p) => String(p._id) === String(pid));
+      if (!product) {
+        missingAny.push({ productId: pid, missingMaterials: ["PRODUCT_NOT_FOUND"] });
+        continue;
+      }
+      const requiredMaterialIds = product.materials ?? [];
+      const missing: string[] = [];
+      for (const materialId of requiredMaterialIds) {
+        const material = materialStore.materials.find((m) => String(m._id) === String(materialId));
+        if (!material || (material.stock ?? 0) <= 0) missing.push(materialId);
+      }
+      if (missing.length) {
+        missingAny.push({ productId: pid, missingMaterials: missing });
+      } else {
+        productsToProcess.push(product);
       }
     }
 
-    if (missing.length > 0) {
-      // order fail due to missing materials
-      emitOrderResult({
+    if (missingAny.length > 0) {
+      // report failure for the order (caller leaves queue)
+      await emitOrderResult({
         businessId: businessStore.selectedBusiness?._id,
         customerId: customer.id,
         success: false,
         reason: "MATERIALS_MISSING",
-        productIds: [product._id as ID],
-        extra: { missing },
+        productIds: missingAny.map((m) => m.productId),
+        extra: { missing: missingAny },
       });
-      // customer leaves queue on fail
       return;
     }
 
-    // deduct materials (update backend via materialStore.updateMaterial to persist)
-    for (const materialId of requiredMaterialIds) {
-      const material = materialStore.materials.find((m) => String(m._id) === String(materialId));
-      if (material) {
-        // decrement stock and persist
-        const newStock = Math.max(0, (material.stock ?? 0) - 1);
-        materialStore.updateMaterial(material._id as string | number, { stock: newStock }).catch((e) => {
-          console.warn("Failed to persist material stock change", e);
-        });
-        // update in-memory copy immediate (so subsequent checks read new value)
-        material.stock = newStock;
+    // All products available -> deduct materials for all products now
+    for (const product of productsToProcess) {
+      const requiredMaterialIds = product.materials ?? [];
+      for (const materialId of requiredMaterialIds) {
+        const material = materialStore.materials.find((m) => String(m._id) === String(materialId));
+        if (material) {
+          const newStock = Math.max(0, (material.stock ?? 0) - 1);
+          materialStore.updateMaterial(material._id as string | number, { stock: newStock }).catch((e) => {
+            console.warn("Failed to persist material stock change", e);
+          });
+          material.stock = newStock;
+        }
       }
     }
 
-    // create production slot or queue it
-    const orderId = `order_${customer.id}_${Date.now()}`;
-    const prodSlot: ProductionSlot = {
-      id: `ps_${orderId}`,
-      orderId,
-      productId: product._id as ID,
-      materialIndex: 0,
-      materialsDone: [],
-      materialTimeLeft: (() => {
-        const firstMaterialId = product.materials?.[0];
-        const material = materialStore.materials.find((m) => String(m._id) === String(firstMaterialId));
-        return material ? Math.max(1, Math.floor(material.timeRequired)) : 1;
-      })(),
-      totalTimeLeft: product.materials
-        .map((materialId) => {
-          const material = materialStore.materials.find((x) => String(x._id) === String(materialId));
-          return material ? Math.max(1, Math.floor(material.timeRequired)) : 1;
-        })
-        .reduce((a, b) => a + b, 0),
-    };
-
-    // if free production slot available, start immediately
+    // create production slots (one per product) and either start or queue them
     const business = getBusiness();
     if (!business) {
-      // no business loaded -> fail
-      emitOrderResult({
+      await emitOrderResult({
         businessId: undefined,
         customerId: customer.id,
         success: false,
         reason: "NO_BUSINESS_LOADED",
-        productIds: [],
-        extra: { orderId: prodSlot.orderId },
+        productIds: productIds,
+        extra: {},
       });
       return;
     }
 
-    const usedSlots = productionSlots.value.length;
-    if (usedSlots < (business.productionSlotsCount ?? 0)) {
-      productionSlots.value.push(prodSlot);
-      await emitOrderResult({
-        businessId: business._id,
-        customerId: customer.id,
-        success: true,
-        reason: "ORDER_ACCEPTED_AND_STARTED",
-        productIds: [prodSlot.productId],
-        extra: { orderId: prodSlot.orderId },
-      });
-    } else {
-      // put into creationQueue (FIFO)
-      creationQueue.value.push(prodSlot);
-      await emitOrderResult({
-        businessId: business._id,
-        customerId: customer.id,
-        success: true,
-        reason: "ORDER_QUEUED",
-        productIds: [prodSlot.productId],
-        extra: { orderId: prodSlot.orderId },
-      });
+    for (let i = 0; i < productsToProcess.length; i++) {
+      const product = productsToProcess[i];
+      const orderId = `order_${customer.id}_${Date.now()}_${i}`;
+      const prodSlot: ProductionSlot = {
+        id: `ps_${orderId}`,
+        orderId,
+        productId: product._id as ID,
+        materialIndex: 0,
+        materialsDone: [],
+        materialTimeLeft: (() => {
+          const firstMaterialId = product.materials?.[0];
+          const material = materialStore.materials.find((m) => String(m._id) === String(firstMaterialId));
+          return material ? Math.max(1, Math.floor(material.timeRequired)) : 1;
+        })(),
+        totalTimeLeft: product.materials
+          .map((materialId: ID) => {
+            const material = materialStore.materials.find((x) => String(x._id) === String(materialId));
+            return material ? Math.max(1, Math.floor(material.timeRequired)) : 1;
+          })
+          .reduce((a: number, b: number) => a + b, 0),
+      };
+
+      const usedSlots = productionSlots.value.length;
+      if (usedSlots < (business.productionSlotsCount ?? 0)) {
+        productionSlots.value.push(prodSlot);
+        await emitOrderResult({
+          businessId: business._id,
+          customerId: customer.id,
+          success: true,
+          reason: "ORDER_ACCEPTED_AND_STARTED",
+          productIds: [prodSlot.productId],
+          extra: { orderId: prodSlot.orderId },
+        });
+      } else {
+        creationQueue.value.push(prodSlot);
+        await emitOrderResult({
+          businessId: business._id,
+          customerId: customer.id,
+          success: true,
+          reason: "ORDER_QUEUED",
+          productIds: [prodSlot.productId],
+          extra: { orderId: prodSlot.orderId },
+        });
+      }
     }
   }
 
   async function emitOrderResult(payload: OrderEventPayload) {
-    console.log(
-      `Producing order event: businessId=${payload.businessId}, customerId=${payload.customerId}, success=${payload.success}, reason=${payload.reason}`
-    );
     const data = {
       businessId: businessStore.selectedBusiness?._id,
       customerId: payload.customerId,
@@ -414,6 +413,19 @@ export const useSimulationStore = defineStore("simulation", () => {
   }
 
   // add customer to a specific queue (or automatically to shortest)
+  function insertIntoQueue(q: Queue, cust: Customer) {
+    // insertion index: we don't skip the first person (index 0). Insert after first,
+    // but preserve arrival order among same-priority customers and allow higher priority to go before lower.
+    let insertIndex = Math.min(1, q.customers.length);
+    while (insertIndex < q.customers.length) {
+      const existing = q.customers[insertIndex];
+      if (existing && existing.priority >= cust.priority) insertIndex++;
+      else break;
+    }
+    if (insertIndex >= q.customers.length) q.customers.push(cust);
+    else q.customers.splice(insertIndex, 0, cust);
+  }
+
   function enqueueCustomer(customer: Partial<Customer>, queueId?: ID) {
     const c: Customer = {
       id: customer.id ?? `c_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -421,31 +433,61 @@ export const useSimulationStore = defineStore("simulation", () => {
       order: customer.order ?? [],
       // customers ordering time between 2 and 6 seconds
       orderingTimeLeft: customer.orderingTimeLeft ?? Math.max(1, Math.floor(Math.random() * 5) + 2),
+      arrivalTime: customer.arrivalTime ?? Date.now(),
       retries: 0,
     };
+
+    if (queues.value.length === 0) {
+      console.warn("No queues available");
+      return null;
+    }
 
     if (queueId) {
       const q = queues.value.find((x) => x.id === queueId);
       if (q) {
-        q.customers.push(c);
+        insertIntoQueue(q, c);
         saveSnapshot();
         return c;
       }
-    }
-
-    // add to shortest open queue
-    if (queues.value.length === 0) {
-      console.warn("No queues available");
-      return null;
     }
 
     let openQueues = queues.value.filter((q) => q.isOpen);
     if (openQueues.length === 0) openQueues = queues.value;
 
     const shortest = openQueues.reduce((min, q) => (q.customers.length < min.customers.length ? q : min));
-    shortest.customers.push(c);
+    insertIntoQueue(shortest, c);
     saveSnapshot();
     return c;
+  }
+
+  // rebalance all customers across open queues based on arrival time
+  function rebalanceQueues() {
+    // collect all customers from all queues
+    const all: Customer[] = [];
+    for (const q of queues.value) {
+      for (const c of q.customers) all.push(c);
+      q.customers = [];
+    }
+
+    // sort by arrivalTime (oldest first). If missing arrivalTime, treat as now.
+    all.sort((a, b) => (a.arrivalTime ?? 0) - (b.arrivalTime ?? 0));
+
+    const openQueues = queues.value.filter((q) => q.isOpen);
+    if (openQueues.length === 0) {
+      console.warn("No open queues to rebalance into — dropping customers");
+      saveSnapshot();
+      return;
+    }
+
+    // distribute in round-robin into open queues, but insert respecting priority rules
+    let idx = 0;
+    for (const cust of all) {
+      const target = openQueues[idx % openQueues.length];
+      if (target) insertIntoQueue(target, cust);
+      idx++;
+    }
+
+    saveSnapshot();
   }
 
   // add random customer ordering random product
@@ -453,18 +495,76 @@ export const useSimulationStore = defineStore("simulation", () => {
     const products = productStore.products;
     if (!products.length) return null;
 
-    const p = products[Math.floor(Math.random() * products.length)];
-    if (!p || !p._id) return null;
+    // choose 1..N random products (no repetition)
+    const maxCount = products.length;
+    const count = Math.floor(Math.random() * maxCount) + 1;
+    const chosen: string[] = [];
+    const copy = [...products];
+    for (let i = 0; i < count && copy.length; i++) {
+      const idx = Math.floor(Math.random() * copy.length);
+      const p = copy.splice(idx, 1)[0];
+      if (p && p._id) chosen.push(String(p._id));
+    }
 
-    return enqueueCustomer({ order: [String(p._id)] });
+    // random chance to be a reorder/cancel customer (priority 1)
+    const isReorder = Math.random() < 0.2; // 20% chance
+    const priority = isReorder ? 1 : 0;
+
+    return enqueueCustomer({ order: chosen, priority });
+  }
+
+  // add VIP customer (priority 2)
+  function addVipCustomer() {
+    const products = productStore.products;
+    if (!products.length) return null;
+    const count = Math.floor(Math.random() * products.length) + 1;
+    const chosen: string[] = [];
+    const copy = [...products];
+    for (let i = 0; i < count && copy.length; i++) {
+      const idx = Math.floor(Math.random() * copy.length);
+      const p = copy.splice(idx, 1)[0];
+      if (p && p._id) chosen.push(String(p._id));
+    }
+    return enqueueCustomer({ order: chosen, priority: 2 });
   }
 
   // init from selected business or load snapshot
   function initFromSelectedBusiness() {
     const selectedBusiness = businessStore.selectedBusiness;
     if (!selectedBusiness) return;
+    // If Pinia has already restored simulation state for this business, keep it.
+    if (
+      activeBusinessId.value &&
+      String(activeBusinessId.value) === String(selectedBusiness._id) &&
+      queues.value.length > 0
+    ) {
+      return;
+    }
+
+    // otherwise initialize fresh simulation for the selected business
     initForBusiness(selectedBusiness._id as string | number);
     saveSnapshot();
+  }
+
+  function toggleQueueOpen(queueId: String | number) {
+    const q = queues.value.find((x) => x.id === queueId);
+    if (!q) return;
+    const wasOpen = q.isOpen;
+    q.isOpen = !q.isOpen;
+
+    // rebalance across open queues when a queue is opened or closed
+    rebalanceQueues();
+  }
+
+  // add a new queue at runtime and rebalance customers
+  function addQueue() {
+    const nextNumber = queues.value.length + 1;
+    const q: Queue = { id: `q${nextNumber}`, number: nextNumber, customers: [], isOpen: true };
+    queues.value.push(q);
+    // rebalance to include new queue
+    rebalanceQueues();
+    saveSnapshot();
+    return q;
   }
 
   return {
@@ -482,9 +582,12 @@ export const useSimulationStore = defineStore("simulation", () => {
     initFromSelectedBusiness,
     enqueueCustomer,
     addRandomCustomer,
+    addVipCustomer,
+    addQueue,
     startTicking,
     stopTicking,
     clearSimulation,
     tick,
+    toggleQueueOpen,
   };
 });

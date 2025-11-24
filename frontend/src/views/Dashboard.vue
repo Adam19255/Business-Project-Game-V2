@@ -13,7 +13,7 @@ onMounted(() => {
     return;
   }
 
-  simulation.initForBusiness(businessStore.selectedBusiness._id as string);
+  simulation.initFromSelectedBusiness();
 });
 </script>
 
@@ -25,6 +25,7 @@ onMounted(() => {
       <button class="play-button" @click="simulation.startTicking">Start</button>
       <button class="play-button" @click="simulation.stopTicking">Stop</button>
       <button class="play-button" @click="simulation.addRandomCustomer">Add Customer</button>
+      <button class="play-button" @click="simulation.addVipCustomer">Add VIP Customer</button>
       <button class="play-button" @click="() => $router.push('/events')">View Events</button>
     </div>
 
