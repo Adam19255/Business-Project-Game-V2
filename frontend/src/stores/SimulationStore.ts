@@ -4,9 +4,12 @@ import { ref } from "vue";
 import { useBusinessStore } from "./BusinessStore";
 import { useProductStore } from "./ProductStore";
 import { useMaterialStore } from "./MaterialStore";
+import axios from "axios";
 // import { postEvent } from "@/services/api";
 
 type ID = string;
+
+const API_BASE = "http://localhost:3000";
 
 export interface Customer {
   id: ID;
@@ -38,6 +41,23 @@ export interface DeliveryItem {
   orderId: ID;
   productId: ID;
   timeLeft: number;
+}
+
+interface SimulationSnapshot {
+  activeBusinessId: string | number | null;
+  queues: Queue[];
+  creationQueue: ProductionSlot[];
+  productionSlots: ProductionSlot[];
+  deliveries: DeliveryItem[];
+}
+
+interface OrderEventPayload {
+  businessId: String | number | undefined;
+  customerId: ID;
+  success: boolean;
+  reason: string;
+  productIds: string[];
+  extra?: any;
 }
 
 const SNAPSHOT_KEY = "business_sim_snapshot";
@@ -104,7 +124,7 @@ export const useSimulationStore = defineStore("simulation", () => {
   }
 
   // tick logic: call every second
-  function tick() {
+  async function tick() {
     // 1. Advance ordering timers for customers
     for (const queue of queues.value) {
       if (!queue.customers.length) continue;
@@ -176,11 +196,14 @@ export const useSimulationStore = defineStore("simulation", () => {
     // complete deliveries
     const completed = deliveries.value.filter((delivery) => delivery.timeLeft === 0);
     for (const c of completed) {
-      // postEvent({
-      //   time: Date.now(),
-      //   type: "DELIVERY_COMPLETE",
-      //   payload: { orderId: c.orderId, productId: c.productId },
-      // }).catch(() => {});
+      await emitOrderResult({
+        businessId: businessStore.selectedBusiness?._id,
+        customerId: c.orderId,
+        success: true,
+        reason: "DELIVERY_COMPLETE",
+        productIds: [c.productId],
+        extra: {},
+      });
     }
     deliveries.value = deliveries.value.filter((d) => d.timeLeft > 0);
 
@@ -190,13 +213,20 @@ export const useSimulationStore = defineStore("simulation", () => {
     saveSnapshot();
   }
 
-  function attemptFulfillOrder(queue: Queue, customer: Customer) {
+  async function attemptFulfillOrder(queue: Queue, customer: Customer) {
     // Simplified: single product orders for now (customer.order[0])
     const productId = customer.order[0];
     const product = productStore.products.find((p) => String(p._id) === String(productId));
     if (!product) {
       // product does not exist -> fail
-      emitOrderResult(customer.id, false, "PRODUCT_NOT_FOUND");
+      emitOrderResult({
+        businessId: businessStore.selectedBusiness?._id,
+        customerId: customer.id,
+        success: false,
+        reason: "PRODUCT_NOT_FOUND",
+        productIds: [],
+        extra: {},
+      });
       return;
     }
 
@@ -212,7 +242,14 @@ export const useSimulationStore = defineStore("simulation", () => {
 
     if (missing.length > 0) {
       // order fail due to missing materials
-      emitOrderResult(customer.id, false, "MATERIALS_MISSING", { missing });
+      emitOrderResult({
+        businessId: businessStore.selectedBusiness?._id,
+        customerId: customer.id,
+        success: false,
+        reason: "MATERIALS_MISSING",
+        productIds: [product._id as ID],
+        extra: { missing },
+      });
       // customer leaves queue on fail
       return;
     }
@@ -256,45 +293,62 @@ export const useSimulationStore = defineStore("simulation", () => {
     const business = getBusiness();
     if (!business) {
       // no business loaded -> fail
-      emitOrderResult(customer.id, false, "NO_BUSINESS_LOADED");
+      emitOrderResult({
+        businessId: undefined,
+        customerId: customer.id,
+        success: false,
+        reason: "NO_BUSINESS_LOADED",
+        productIds: [],
+        extra: { orderId: prodSlot.orderId },
+      });
       return;
     }
 
     const usedSlots = productionSlots.value.length;
     if (usedSlots < (business.productionSlotsCount ?? 0)) {
       productionSlots.value.push(prodSlot);
-      emitOrderResult(customer.id, true, "ORDER_ACCEPTED_AND_STARTED", { orderId });
-      // postEvent({
-      //   time: Date.now(),
-      //   type: "ORDER_ACCEPTED",
-      //   payload: { orderId, productId: product._id, customerId: customer.id },
-      // }).catch(() => {});
+      await emitOrderResult({
+        businessId: business._id,
+        customerId: customer.id,
+        success: true,
+        reason: "ORDER_ACCEPTED_AND_STARTED",
+        productIds: [prodSlot.productId],
+        extra: { orderId: prodSlot.orderId },
+      });
     } else {
       // put into creationQueue (FIFO)
       creationQueue.value.push(prodSlot);
-      emitOrderResult(customer.id, true, "ORDER_QUEUED", { orderId });
-      // postEvent({
-      //   time: Date.now(),
-      //   type: "ORDER_QUEUED",
-      //   payload: { orderId, productId: product._id, customerId: customer.id },
-      // }).catch(() => {});
+      await emitOrderResult({
+        businessId: business._id,
+        customerId: customer.id,
+        success: true,
+        reason: "ORDER_QUEUED",
+        productIds: [prodSlot.productId],
+        extra: { orderId: prodSlot.orderId },
+      });
     }
   }
 
-  function emitOrderResult(customerId: ID, success: boolean, reason: string, extra?: any) {
-    console.log(`Order for customer ${customerId} ${success ? "succeeded" : "failed"}: ${reason}`);
-    // postEvent({
-    //   time: Date.now(),
-    //   type: success ? "ORDER_SUCCESS" : "ORDER_FAILED",
-    //   payload: {
-    //     customerId,
-    //     reason,
-    //     ...extra,
-    //   },
-    // }).catch(() => {});
+  async function emitOrderResult(payload: OrderEventPayload) {
+    console.log(
+      `Producing order event: businessId=${payload.businessId}, customerId=${payload.customerId}, success=${payload.success}, reason=${payload.reason}`
+    );
+    const data = {
+      businessId: businessStore.selectedBusiness?._id,
+      customerId: payload.customerId,
+      success: payload.success,
+      reason: payload.reason,
+      productIds: payload.productIds,
+      ...payload.extra,
+    };
+    try {
+      await axios.post(`${API_BASE}/post-event`, data);
+    } catch (error) {
+      console.error("Error posting order event:", error);
+    }
   }
 
-  function startDelivery(orderId: ID, productId: ID) {
+  async function startDelivery(orderId: ID, productId: ID) {
     const business = getBusiness();
     const deliveryTime = business?.deliveryTime ?? 5;
     deliveries.value.push({
@@ -306,15 +360,17 @@ export const useSimulationStore = defineStore("simulation", () => {
 
     // remove production slot with this orderId
     productionSlots.value = productionSlots.value.filter((p) => p.orderId !== orderId);
-
-    // postEvent({
-    //   time: Date.now(),
-    //   type: "PRODUCTION_FINISHED",
-    //   payload: { orderId, productId },
-    // }).catch(() => {});
+    await emitOrderResult({
+      businessId: businessStore.selectedBusiness?._id,
+      customerId: orderId,
+      success: true,
+      reason: "DELIVERY_STARTED",
+      productIds: [productId],
+      extra: {},
+    });
   }
 
-  function fillProductionSlots() {
+  async function fillProductionSlots() {
     const business = getBusiness();
     if (!business) return;
 
@@ -325,11 +381,14 @@ export const useSimulationStore = defineStore("simulation", () => {
       const next = creationQueue.value.shift();
       if (!next) break;
       productionSlots.value.push(next);
-      // postEvent({
-      //   time: Date.now(),
-      //   type: "PRODUCTION_STARTED_FROM_QUEUE",
-      //   payload: { orderId: next.orderId, productId: next.productId },
-      // }).catch(() => {});
+      await emitOrderResult({
+        businessId: businessStore.selectedBusiness?._id,
+        customerId: next.orderId,
+        success: true,
+        reason: "PRODUCTION_STARTED_FROM_QUEUE",
+        productIds: [next.productId],
+        extra: {},
+      });
     }
   }
 

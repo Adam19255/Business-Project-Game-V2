@@ -68,6 +68,22 @@ h1 {
   }
 }
 
+.play-button {
+  background-color: #1581bf;
+  min-width: 15rem;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.6rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #67b2d8;
+  }
+}
+
 .danger-button {
   background-color: #dc4446;
   min-width: 15rem;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useRoute } from "vue-router";
 import { useBusinessStore } from "@/stores/BusinessStore";
 
 const businessStore = useBusinessStore();
@@ -9,6 +10,19 @@ const collapsed = ref(false);
 
 function toggleCollapse() {
   collapsed.value = !collapsed.value;
+}
+
+const route = useRoute();
+function isActive(path: string) {
+  // treat exact match or path prefix as active
+  const current = route.path || "";
+  if (path === "/") return current === "/";
+  return (
+    current === path ||
+    current.startsWith(path + "/") ||
+    current.startsWith(path + "?") ||
+    current.startsWith(path + "#")
+  );
 }
 </script>
 
@@ -94,7 +108,7 @@ function toggleCollapse() {
       </g>
     </svg>
     <RouterLink to="/dashboard" v-if="selected">
-      <div class="sidebar-item">
+      <div class="sidebar-item" :class="{ active: isActive('/dashboard') }">
         <svg viewBox="0 -0.5 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
           <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -137,7 +151,7 @@ function toggleCollapse() {
       </div>
     </RouterLink>
     <RouterLink to="/products" v-if="selected">
-      <div class="sidebar-item">
+      <div class="sidebar-item" :class="{ active: isActive('/products') }">
         <svg fill="#5cb338" viewBox="0 -7.32 143.398 143.398" xmlns="http://www.w3.org/2000/svg">
           <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
           <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -153,7 +167,7 @@ function toggleCollapse() {
       </div>
     </RouterLink>
     <RouterLink to="/materials" v-if="selected">
-      <div class="sidebar-item">
+      <div class="sidebar-item" :class="{ active: isActive('/materials') }">
         <svg
           fill="#5cb338"
           height="200px"
@@ -182,7 +196,7 @@ function toggleCollapse() {
       </div>
     </RouterLink>
     <RouterLink to="/business/settings" v-if="selected">
-      <div class="sidebar-item">
+      <div class="sidebar-item" :class="{ active: isActive('/business/settings') }">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
           <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -199,7 +213,7 @@ function toggleCollapse() {
     </RouterLink>
     <div class="lower-part">
       <RouterLink to="/business/new">
-        <div class="sidebar-item">
+        <div class="sidebar-item" :class="{ active: isActive('/business/new') }">
           <svg fill="#5CB338" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
             <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
             <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
@@ -226,7 +240,7 @@ function toggleCollapse() {
         </div>
       </RouterLink>
       <RouterLink to="/business/all">
-        <div class="sidebar-item">
+        <div class="sidebar-item" :class="{ active: isActive('/business/all') }">
           <svg
             fill="#5CB338"
             version="1.1"
@@ -307,6 +321,17 @@ function toggleCollapse() {
       border-radius: 3rem;
       cursor: pointer;
       transition: all 0.2s ease;
+    }
+
+    .sidebar-item.active {
+      background-color: #5cb338;
+      color: white;
+    }
+
+    .sidebar-item.active svg path,
+    .sidebar-item.active svg {
+      fill: white !important;
+      stroke: white !important;
     }
 
     span {

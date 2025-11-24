@@ -5,6 +5,7 @@ import ShowAllBusinesses from "@/views/ShowAllBusinesses.vue";
 import BusinessSettings from "@/views/BusinessSettings.vue";
 import ManageMaterials from "@/views/ManageMaterials.vue";
 import ManageProducts from "@/views/ManageProducts.vue";
+import ShowEvents from "@/views/ShowEvents.vue";
 import { useBusinessStore } from "@/stores/BusinessStore";
 
 const router = createRouter({
@@ -39,6 +40,11 @@ const router = createRouter({
       path: "/dashboard",
       name: "Dashboard",
       component: Dashboard,
+    },
+    {
+      path: "/events",
+      name: "ShowEvents",
+      component: ShowEvents,
     },
   ],
 });

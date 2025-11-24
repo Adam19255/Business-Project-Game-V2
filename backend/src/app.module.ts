@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { BusinessModule } from './modules/business/business.module';
 import { MaterialModule } from './modules/material/material.module';
 import { ProductModule } from './modules/product/product.module';
+import { PostEventModule } from './modules/postEvent/postEvent.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { ProductModule } from './modules/product/product.module';
     BusinessModule,
     MaterialModule,
     ProductModule,
+    PostEventModule,
   ],
   controllers: [],
   providers: [],

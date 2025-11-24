@@ -22,10 +22,10 @@ onMounted(() => {
     <h1>Business Dashboard</h1>
 
     <div class="controls">
-      <button @click="simulation.startTicking">Start</button>
-      <button @click="simulation.stopTicking">Stop</button>
-      <button @click="simulation.addRandomCustomer">Add Random Customer</button>
-      <!-- <button @click="() => $router.push('/events')">View Events</button> -->
+      <button class="play-button" @click="simulation.startTicking">Start</button>
+      <button class="play-button" @click="simulation.stopTicking">Stop</button>
+      <button class="play-button" @click="simulation.addRandomCustomer">Add Customer</button>
+      <button class="play-button" @click="() => $router.push('/events')">View Events</button>
     </div>
 
     <Queue v-for="queue in simulation.queues" :key="queue.id" :queue="queue" />
