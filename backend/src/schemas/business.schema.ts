@@ -16,6 +16,9 @@ export class Business {
 
   @Prop({ required: true })
   queueCount: number;
+
+  @Prop()
+  revenue: number;
 }
 
 export const BusinessSchema = SchemaFactory.createForClass(Business);

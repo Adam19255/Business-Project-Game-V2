@@ -14,6 +14,7 @@ export interface Customer {
   orderingTimeLeft: number; // seconds left to finish ordering
   arrivalTime?: number;
   retries?: number;
+  money?: number; // customer's available money (10-50)
   actionType?: "order" | "reorder" | "cancel";
   originalOrderIds?: string | string[]; // original order ID for reorder/cancel
 }
@@ -606,8 +607,7 @@ export const useSimulationStore = defineStore("simulation", () => {
       });
       return;
     }
-
-    // check material availability
+    // check material availability first and collect product objects
     const missingAny: { productId: string; missingMaterials: string[] }[] = [];
     const productsToProcess: any[] = [];
 
@@ -634,7 +634,7 @@ export const useSimulationStore = defineStore("simulation", () => {
           reason: "MATERIALS_MISSING_FOR_PRODUCT",
           productName: product.name,
           productIds: [pid],
-          cost: product.price,
+          cost: 0,
           extra: { missingMaterials: missing },
         });
         return;
@@ -642,6 +642,100 @@ export const useSimulationStore = defineStore("simulation", () => {
         productsToProcess.push(product);
       }
     }
+
+    // calculate total order cost
+    const totalCost = productsToProcess.reduce((sum: number, p: any) => sum + (p.price ?? 0), 0);
+
+    // ensure customer has money
+    const customerMoney = customer.money ?? 10;
+
+    // first check if customer has sufficient funds
+    if (customerMoney < totalCost) {
+      // payment failed due to insufficient funds
+      const newRetries = (customer.retries ?? 0) + 1;
+      customer.retries = newRetries;
+
+      await emitOrderResult({
+        businessId: businessStore.selectedBusiness?._id,
+        customerId: customer.id,
+        success: false,
+        reason: "PAYMENT_FAILED_INSUFFICIENT_FUNDS",
+        productName: productsToProcess.map((p) => p.name).join(", "),
+        productIds: productIds,
+        cost: 0,
+        extra: { customerMoney, retries: newRetries },
+      });
+
+      // if retries remain, re-enqueue the customer to try again (up to 3 attempts)
+      if (newRetries < 3) {
+        enqueueCustomer({ ...customer, orderingTimeLeft: Math.max(1, Math.floor(Math.random() * 3) + 1) });
+      } else {
+        await emitOrderResult({
+          businessId: businessStore.selectedBusiness?._id,
+          customerId: customer.id,
+          success: false,
+          reason: "ORDER_FAILED_MAX_RETRIES_INSUFFICIENT_FUNDS",
+          productName: productsToProcess.map((p) => p.name).join(", "),
+          productIds: productIds,
+          cost: 0,
+          extra: { customerMoney, retries: newRetries },
+        });
+      }
+
+      return;
+    }
+
+    // random business failure of 5%
+    const businessFail = Math.random() < 0.05;
+    if (businessFail) {
+      const newRetries = (customer.retries ?? 0) + 1;
+      customer.retries = newRetries;
+
+      await emitOrderResult({
+        businessId: businessStore.selectedBusiness?._id,
+        customerId: customer.id,
+        success: false,
+        reason: "PAYMENT_FAILED_BUSINESS_ERROR",
+        productName: productsToProcess.map((p) => p.name).join(", "),
+        productIds: productIds,
+        cost: 0,
+        extra: { retries: newRetries },
+      });
+
+      if (newRetries < 3) {
+        enqueueCustomer({ ...customer, orderingTimeLeft: Math.max(1, Math.floor(Math.random() * 3) + 1) });
+      } else {
+        await emitOrderResult({
+          businessId: businessStore.selectedBusiness?._id,
+          customerId: customer.id,
+          success: false,
+          reason: "ORDER_FAILED_MAX_RETRIES_BUSINESS_ERROR",
+          productName: productsToProcess.map((p) => p.name).join(", "),
+          productIds: productIds,
+          cost: 0,
+          extra: { retries: newRetries },
+        });
+      }
+
+      return;
+    }
+
+    // Payment succeeded
+    customer.money = (customer.money ?? 10) - totalCost;
+    businessStore.updateBusiness(businessStore.selectedBusiness?._id as string | number, {
+      revenue: (businessStore.selectedBusiness?.revenue ?? 0) + totalCost,
+    });
+
+    await emitOrderResult({
+      businessId: businessStore.selectedBusiness?._id,
+      customerId: customer.id,
+      success: true,
+      reason: "PAYMENT_SUCCESS",
+      productName: productsToProcess.map((p) => p.name).join(", "),
+      productIds: productIds,
+      cost: totalCost,
+      extra: { remainingMoney: customer.money },
+    });
 
     // deduct materials from stock
     for (const product of productsToProcess) {
@@ -685,7 +779,7 @@ export const useSimulationStore = defineStore("simulation", () => {
         orderId,
         productId: product._id as string,
         name: product.name,
-        cost: product.cost,
+        cost: product.price,
         materialIndex: 0,
         materialsDone: [],
         materialTimeLeft: (() => {
@@ -856,6 +950,8 @@ export const useSimulationStore = defineStore("simulation", () => {
       orderingTimeLeft: customer.orderingTimeLeft ?? Math.max(1, Math.floor(Math.random() * 5) + 2),
       arrivalTime: customer.arrivalTime ?? Date.now(),
       retries: customer.retries ?? 0,
+      // assign random money between 10 and 50
+      money: customer.money ?? Math.floor(Math.random() * 41) + 10,
       actionType: customer.actionType ?? "order",
       originalOrderIds: customer.originalOrderIds,
     };

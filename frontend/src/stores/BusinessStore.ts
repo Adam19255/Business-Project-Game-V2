@@ -9,6 +9,7 @@ export interface Business {
   queueCount: number;
   productionSlotsCount: number;
   deliveryTime: number;
+  revenue?: number;
 }
 
 const API_BASE = "http://localhost:3000";

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateBusinessDto {
   @IsNotEmpty()
@@ -16,4 +16,8 @@ export class CreateBusinessDto {
   @IsNotEmpty()
   @IsNumber()
   queueCount: number;
+
+  @IsNumber()
+  @IsOptional()
+  revenue?: number;
 }
