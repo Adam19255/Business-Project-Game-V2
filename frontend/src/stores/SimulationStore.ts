@@ -33,6 +33,7 @@ export interface ProductionSlot {
   materialTimeLeft: number; // seconds left for current material
   materialsDone: string[]; // material ids done
   totalTimeLeft: number; // total seconds left for entire product
+  priority: 0 | 1; // 1 = priority production (e.g. reproduction)
 }
 
 export interface DeliveryItem {
@@ -171,12 +172,45 @@ export const useSimulationStore = defineStore("simulation", () => {
     // remove finished production slots
     productionSlots.value = productionSlots.value.filter((s) => s.totalTimeLeft > 0);
 
-    // 3. Proceess deliveries
+    // 3. Process deliveries
     for (const delivery of deliveries.value) {
       delivery.timeLeft = Math.max(0, delivery.timeLeft - 1);
     }
-    // complete deliveries that have reached 0
-    const completed = deliveries.value.filter((delivery) => delivery.timeLeft === 0);
+
+    // Determine failed deliveries (5% chance while in transit)
+    const failed: DeliveryItem[] = [];
+    const completed: DeliveryItem[] = [];
+
+    for (const d of deliveries.value) {
+      if (d.timeLeft > 0) {
+        const failChance = Math.random();
+        if (failChance < 0.05) {
+          failed.push(d);
+        }
+      } else if (d.timeLeft === 0) {
+        completed.push(d);
+      }
+    }
+
+    // Handle failures: emit fail event, remove from deliveries and queue reproduction
+    for (const f of failed) {
+      // mark as failed
+      f.timeLeft = 0;
+      await emitOrderResult({
+        businessId: businessStore.selectedBusiness?._id,
+        customerId: f.orderId,
+        success: false,
+        reason: "DELIVERY_FAILED_REPRODUCING_ORDER",
+        productIds: [f.productId],
+        extra: {},
+      });
+      // remove failed delivery from active deliveries
+      deliveries.value = deliveries.value.filter((dd) => dd !== f);
+      // reproduce the order (create priority=1 production slot queued at front)
+      await reproduceFailedOrders(f.orderId, f.productId);
+    }
+
+    // Handle completed deliveries
     for (const c of completed) {
       await emitOrderResult({
         businessId: businessStore.selectedBusiness?._id,
@@ -187,10 +221,60 @@ export const useSimulationStore = defineStore("simulation", () => {
         extra: {},
       });
     }
+
+    // Remove any deliveries that reached 0 (either completed or failed)
     deliveries.value = deliveries.value.filter((d) => d.timeLeft > 0);
 
     // 4. Move waiting creation queue into production slots
     fillProductionSlots();
+  }
+
+  async function reproduceFailedOrders(orderId: string, productId: string) {
+    const prod = productStore.products.find((p) => String(p._id) === String(productId));
+    const parts = orderId.split("_");
+    const customerId = `c_${Date.now()}_${parts[3]}`;
+    if (!prod) return;
+
+    // create a new order id for the reproduced product
+    const reproOrderId = `order_${customerId}`;
+
+    // calculate times similarly to normal production slots
+    const totalTime = (prod.materials ?? [])
+      .map((materialId: string) => {
+        const material = materialStore.materials.find((m) => String(m._id) === String(materialId));
+        return material ? Math.max(1, Math.floor(material.timeRequired)) : 1;
+      })
+      .reduce((a: number, b: number) => a + b, 0);
+
+    const firstMaterialId = prod.materials?.[0];
+    const firstMaterial = materialStore.materials.find((m) => String(m._id) === String(firstMaterialId));
+    const firstTime = firstMaterial ? Math.max(1, Math.floor(firstMaterial.timeRequired)) : 1;
+
+    const newSlot: ProductionSlot = {
+      id: `ps_${reproOrderId}`,
+      orderId: reproOrderId,
+      productId: prod._id as string,
+      materialIndex: 0,
+      materialsDone: [],
+      materialTimeLeft: firstTime,
+      totalTimeLeft: Math.max(1, totalTime),
+      priority: 1,
+    };
+
+    // Insert at the front of creationQueue so it is next to be produced,
+    creationQueue.value.unshift(newSlot);
+
+    // Mark this order as a priority-one reproduction so other logic can recognize it
+    priorityOneOrders.value.push(newSlot.orderId);
+
+    await emitOrderResult({
+      businessId: businessStore.selectedBusiness?._id,
+      customerId: newSlot.orderId,
+      success: true,
+      reason: "REPRODUCTION_QUEUED",
+      productIds: [newSlot.productId],
+      extra: { originalOrderId: orderId },
+    });
   }
 
   /**
@@ -443,6 +527,7 @@ export const useSimulationStore = defineStore("simulation", () => {
           return material ? Math.max(1, Math.floor(material.timeRequired)) : 1;
         })(),
         totalTimeLeft: adjustedTotalTime,
+        priority: 1,
       };
 
       if (isInProduction) {
@@ -450,7 +535,9 @@ export const useSimulationStore = defineStore("simulation", () => {
       } else {
         const queueIndex = creationQueue.value.findIndex((s) => s.orderId === originalOrderId);
         if (queueIndex !== -1) {
+          // replace in queue and move to front
           creationQueue.value.splice(queueIndex, 1, updatedSlot);
+          creationQueue.value.unshift(updatedSlot);
         }
       }
 
@@ -568,6 +655,7 @@ export const useSimulationStore = defineStore("simulation", () => {
             return material ? Math.max(1, Math.floor(material.timeRequired)) : 1;
           })
           .reduce((a: number, b: number) => a + b, 0),
+        priority: 0,
       };
 
       const usedSlots = productionSlots.value.length;
@@ -818,13 +906,10 @@ export const useSimulationStore = defineStore("simulation", () => {
   }
 
   function getRandomOriginalOrderId(): string[] | null | undefined {
-    // gather all existing order IDs from production slots and deliveries
+    // gather all existing order IDs from production slots
     const existingOrderIds: string[] = [];
     for (const slot of productionSlots.value) {
       existingOrderIds.push(slot.orderId);
-    }
-    for (const delivery of deliveries.value) {
-      existingOrderIds.push(delivery.orderId);
     }
 
     if (existingOrderIds.length === 0) return null;
