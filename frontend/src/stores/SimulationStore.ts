@@ -72,15 +72,6 @@ export const useSimulationStore = defineStore("simulation", () => {
   const tickHandle = ref<number | null>(null);
   const existingOrders = ref<ExistingOrders[]>([]);
 
-  // ensure ref arrays are valid arrays (protect against Pinia/restore overwriting them)
-  function ensureArrays() {
-    if (!Array.isArray(queues.value)) queues.value = [];
-    if (!Array.isArray(creationQueue.value)) creationQueue.value = [];
-    if (!Array.isArray(productionSlots.value)) productionSlots.value = [];
-    if (!Array.isArray(deliveries.value)) deliveries.value = [];
-    if (!Array.isArray(existingOrders.value)) existingOrders.value = [];
-  }
-
   // get currently selected business
   function getBusiness() {
     return businessStore.selectedBusiness;
