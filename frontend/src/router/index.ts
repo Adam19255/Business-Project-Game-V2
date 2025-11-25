@@ -12,6 +12,10 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: "/",
+      redirect: "/dashboard",
+    },
+    {
       path: "/business/all",
       name: "ShowAllBusinesses",
       component: ShowAllBusinesses,

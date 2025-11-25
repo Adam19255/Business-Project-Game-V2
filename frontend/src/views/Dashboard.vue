@@ -24,7 +24,21 @@ onMounted(() => {
     <div class="controls">
       <button class="play-button" @click="simulation.startTicking">Start</button>
       <button class="play-button" @click="simulation.stopTicking">Stop</button>
-      <button class="play-button" @click="simulation.addRandomCustomer">Add Customer</button>
+      <button class="play-button" @click="simulation.addRegularCustomer">Add Regular Customer</button>
+      <button
+        class="play-button"
+        :class="{ disabled: simulation.deliveries.length === 0 }"
+        :disabled="simulation.existingOrders?.length === 0"
+        @click="simulation.addReorderCustomer(simulation.existingOrders)">
+        Add Reorder Customer
+      </button>
+      <button
+        class="play-button"
+        :class="{ disabled: simulation.deliveries.length === 0 }"
+        :disabled="simulation.existingOrders?.length === 0"
+        @click="simulation.addCancelCustomer(simulation.existingOrders)">
+        Add Cancel Customer
+      </button>
       <button class="play-button" @click="simulation.addVipCustomer">Add VIP Customer</button>
       <button class="play-button" @click="() => $router.push('/events')">View Events</button>
     </div>

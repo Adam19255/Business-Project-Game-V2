@@ -68,14 +68,17 @@ const props = defineProps({
         </g>
       </svg>
       <div class="queue">
-          <div
-            class="customer-container"
-            v-for="customer in props.queue.customers"
-            :key="customer.id"
-            :class="{ 'priority-1': customer.priority === 1, 'priority-2': customer.priority === 2 }"
-          >
-            <div class="time-left">{{ customer.orderingTimeLeft }}</div>
-          </div>
+        <div
+          class="customer-container"
+          v-for="customer in props.queue.customers"
+          :key="customer.id"
+          :class="{
+            reorder: customer?.actionType === 'reorder',
+            cancel: customer?.actionType === 'cancel',
+            'priority-2': customer.priority === 2,
+          }">
+          <div class="time-left">{{ customer.orderingTimeLeft }}</div>
+        </div>
       </div>
     </div>
   </div>
@@ -137,12 +140,16 @@ const props = defineProps({
     border-radius: 50%;
     background-color: #66c880;
 
-    &.priority-1 {
-      background-color: #ff9f43; /* orange */
+    &.reorder {
+      background-color: #ff9f43;
+    }
+
+    &.cancel {
+      background-color: #ff6b6b;
     }
 
     &.priority-2 {
-      background-color: #ffd700; /* gold */
+      background-color: #ffd700;
     }
 
     .time-left {
