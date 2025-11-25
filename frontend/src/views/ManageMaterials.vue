@@ -129,7 +129,7 @@ async function confirmDelete() {
     <div class="edit-form">
       <div class="form-item">
         <label for="name">Name:</label>
-        <input id="name" v-model="newItemDraft.name" type="text" required />
+        <input id="name" v-model="newItemDraft.name" type="text" required autofocus />
       </div>
       <div class="form-item">
         <label for="timeRequired">Time Required (seconds):</label>
@@ -152,7 +152,7 @@ async function confirmDelete() {
     <div class="edit-form">
       <div class="form-item">
         <label for="name">Name:</label>
-        <input id="name" v-model="draft.name" type="text" required />
+        <input id="name" v-model="draft.name" type="text" required autofocus />
       </div>
 
       <div class="form-item">

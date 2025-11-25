@@ -17,6 +17,12 @@ export class PostEvent {
   @Prop({ type: mongoose.Schema.Types.Mixed })
   extraData: any;
 
+  @Prop({ required: true })
+  productName: string;
+
+  @Prop({ required: true })
+  cost: number;
+
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Product' }] })
   productIds: Types.ObjectId[];
 

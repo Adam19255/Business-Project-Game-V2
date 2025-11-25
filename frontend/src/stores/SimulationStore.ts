@@ -29,6 +29,8 @@ export interface ProductionSlot {
   id: string;
   orderId: string;
   productId: string;
+  name: string;
+  cost: number;
   materialIndex: number; // which material is currently being processed
   materialTimeLeft: number; // seconds left for current material
   materialsDone: string[]; // material ids done
@@ -39,6 +41,8 @@ export interface ProductionSlot {
 export interface DeliveryItem {
   id: string;
   orderId: string;
+  productName: string;
+  cost: number;
   productId: string;
   timeLeft: number; // time left until delivery is complete
 }
@@ -48,6 +52,8 @@ interface OrderEventPayload {
   customerId: string;
   success: boolean;
   reason: string;
+  productName: string;
+  cost: number;
   productIds: string[];
   extra?: any;
 }
@@ -148,7 +154,7 @@ export const useSimulationStore = defineStore("simulation", () => {
         const prod = productStore.products.find((product) => String(product._id) === String(slot.productId));
         if (!prod) {
           // product was deleted during production, move to delivery as failed
-          startDelivery(slot.orderId, slot.productId);
+          startDelivery(slot.orderId, slot.productId, "", 0);
           slot.totalTimeLeft = 0;
           continue;
         }
@@ -163,7 +169,7 @@ export const useSimulationStore = defineStore("simulation", () => {
           slot.materialTimeLeft = nextTime;
         } else {
           // all materials done, send to delivery
-          startDelivery(slot.orderId, slot.productId);
+          startDelivery(slot.orderId, slot.productId, prod.name, prod.price);
           slot.totalTimeLeft = 0;
         }
       }
@@ -201,6 +207,8 @@ export const useSimulationStore = defineStore("simulation", () => {
         customerId: f.orderId,
         success: false,
         reason: "DELIVERY_FAILED_REPRODUCING_ORDER",
+        productName: f.productName,
+        cost: f.cost,
         productIds: [f.productId],
         extra: {},
       });
@@ -217,7 +225,9 @@ export const useSimulationStore = defineStore("simulation", () => {
         customerId: c.orderId,
         success: true,
         reason: "DELIVERY_COMPLETE",
+        productName: c.productName,
         productIds: [c.productId],
+        cost: c.cost,
         extra: {},
       });
     }
@@ -254,6 +264,8 @@ export const useSimulationStore = defineStore("simulation", () => {
       id: `ps_${reproOrderId}`,
       orderId: reproOrderId,
       productId: prod._id as string,
+      name: prod.name,
+      cost: prod.price,
       materialIndex: 0,
       materialsDone: [],
       materialTimeLeft: firstTime,
@@ -272,7 +284,9 @@ export const useSimulationStore = defineStore("simulation", () => {
       customerId: newSlot.orderId,
       success: true,
       reason: "REPRODUCTION_QUEUED",
+      productName: newSlot.name,
       productIds: [newSlot.productId],
+      cost: newSlot.cost,
       extra: { originalOrderId: orderId },
     });
   }
@@ -315,7 +329,9 @@ export const useSimulationStore = defineStore("simulation", () => {
         customerId: customer.id,
         success: false,
         reason: "CANCEL_FAILED_NO_ORDER_ID",
+        cost: 0,
         productIds: [],
+        productName: "",
       });
       return;
     }
@@ -332,7 +348,9 @@ export const useSimulationStore = defineStore("simulation", () => {
             customerId: customer.id,
             success: true,
             reason: "CANCEL_SUCCESSFUL_IN_PRODUCTION",
+            productName: remove.name,
             productIds: [remove.productId],
+            cost: remove.cost,
             extra: { orderId },
           });
         }
@@ -349,7 +367,9 @@ export const useSimulationStore = defineStore("simulation", () => {
             customerId: customer.id,
             success: true,
             reason: "CANCEL_SUCCESSFUL_IN_QUEUE",
+            productName: remove.name,
             productIds: [remove.productId],
+            cost: remove.cost,
             extra: { orderId },
           });
         }
@@ -364,7 +384,9 @@ export const useSimulationStore = defineStore("simulation", () => {
           customerId: customer.id,
           success: false,
           reason: "CANCEL_FAILED_ALREADY_IN_DELIVERY",
+          productName: deliveries.value[deliveryIndex].productName,
           productIds: [deliveries.value[deliveryIndex].productId],
+          cost: deliveries.value[deliveryIndex].cost,
           extra: { orderId },
         });
         continue;
@@ -376,7 +398,9 @@ export const useSimulationStore = defineStore("simulation", () => {
         customerId: customer.id,
         success: false,
         reason: "CANCEL_FAILED_ORDER_NOT_FOUND",
+        productName: "",
         productIds: [],
+        cost: 0,
         extra: { orderId },
       });
     }
@@ -400,7 +424,9 @@ export const useSimulationStore = defineStore("simulation", () => {
         customerId: customer.id,
         success: false,
         reason: "REORDER_FAILED_NO_PRODUCTS",
+        productName: "",
         productIds: [],
+        cost: 0,
       });
       return;
     }
@@ -430,7 +456,9 @@ export const useSimulationStore = defineStore("simulation", () => {
           customerId: customer.id,
           success: false,
           reason: "REORDER_FAILED_ORDER_NOT_FOUND",
+          productName: "",
           productIds: [],
+          cost: 0,
           extra: { originalOrderId },
         });
         continue;
@@ -444,7 +472,9 @@ export const useSimulationStore = defineStore("simulation", () => {
           customerId: customer.id,
           success: false,
           reason: "REORDER_FAILED_PRODUCT_NOT_FOUND",
+          productName: "",
           productIds: newProductIds,
+          cost: 0,
           extra: { originalOrderId },
         });
         continue;
@@ -487,7 +517,9 @@ export const useSimulationStore = defineStore("simulation", () => {
           customerId: customer.id,
           success: true,
           reason: "REORDER_PROCESSED_AS_NEW_ORDER",
+          productName: newProduct.name,
           productIds: newProductIds,
+          cost: newProduct.price,
           extra: { originalOrderId },
         });
         continue;
@@ -519,6 +551,8 @@ export const useSimulationStore = defineStore("simulation", () => {
         id: originalSlot.id,
         orderId: originalSlot.orderId,
         productId: newProduct._id as string,
+        name: newProduct.name,
+        cost: newProduct.price,
         materialIndex: startMaterialIndex,
         materialsDone: [...originalSlot.materialsDone],
         materialTimeLeft: (() => {
@@ -546,7 +580,9 @@ export const useSimulationStore = defineStore("simulation", () => {
         customerId: customer.id,
         success: true,
         reason: "REORDER_SUCCESS_WITH_OVERLAP",
+        productName: newProduct.name,
         productIds: [newProduct._id as string],
+        cost: newProduct.price,
         extra: { originalOrderId, timeSaved, adjustedTotalTime, overlappingMaterials: overlappingMaterials.length },
       });
     }
@@ -563,6 +599,8 @@ export const useSimulationStore = defineStore("simulation", () => {
         customerId: customer.id,
         success: false,
         reason: "NO_PRODUCTS_IN_ORDER",
+        productName: "",
+        cost: 0,
         productIds: [],
         extra: {},
       });
@@ -594,7 +632,9 @@ export const useSimulationStore = defineStore("simulation", () => {
           customerId: customer.id,
           success: false,
           reason: "MATERIALS_MISSING_FOR_PRODUCT",
+          productName: product.name,
           productIds: [pid],
+          cost: product.price,
           extra: { missingMaterials: missing },
         });
         return;
@@ -627,7 +667,9 @@ export const useSimulationStore = defineStore("simulation", () => {
         customerId: customer.id,
         success: false,
         reason: "NO_BUSINESS_LOADED",
+        productName: "",
         productIds: productIds,
+        cost: 0,
         extra: {},
       });
       return;
@@ -642,6 +684,8 @@ export const useSimulationStore = defineStore("simulation", () => {
         id: `ps_${orderId}`,
         orderId,
         productId: product._id as string,
+        name: product.name,
+        cost: product.cost,
         materialIndex: 0,
         materialsDone: [],
         materialTimeLeft: (() => {
@@ -668,6 +712,8 @@ export const useSimulationStore = defineStore("simulation", () => {
           customerId: prodSlot.orderId,
           success: true,
           reason: "PRODUCTION_ACCEPTED_AND_STARTED",
+          productName: prodSlot.name,
+          cost: prodSlot.cost,
           productIds: [prodSlot.productId],
           extra: { orderId: prodSlot.orderId },
         });
@@ -678,6 +724,8 @@ export const useSimulationStore = defineStore("simulation", () => {
           customerId: prodSlot.orderId,
           success: true,
           reason: "PRODUCTION_QUEUED",
+          productName: prodSlot.name,
+          cost: prodSlot.cost,
           productIds: [prodSlot.productId],
           extra: { orderId: prodSlot.orderId },
         });
@@ -692,6 +740,8 @@ export const useSimulationStore = defineStore("simulation", () => {
       customerId: payload.customerId,
       success: payload.success,
       reason: payload.reason,
+      productName: payload.productName,
+      cost: payload.cost,
       productIds: payload.productIds,
       ...payload.extra,
     };
@@ -703,13 +753,15 @@ export const useSimulationStore = defineStore("simulation", () => {
   }
 
   // start delivery for completed production
-  async function startDelivery(orderId: string, productId: string) {
+  async function startDelivery(orderId: string, productId: string, productName: string, cost: number) {
     const business = getBusiness();
     const deliveryTime = business?.deliveryTime ?? 5;
     deliveries.value.push({
       id: `d_${orderId}`,
       orderId,
+      productName,
       productId,
+      cost,
       timeLeft: Math.max(1, Math.floor(deliveryTime)),
     });
 
@@ -721,6 +773,8 @@ export const useSimulationStore = defineStore("simulation", () => {
       customerId: orderId,
       success: true,
       reason: "DELIVERY_STARTED",
+      productName,
+      cost,
       productIds: [productId],
       extra: {},
     });
@@ -745,6 +799,8 @@ export const useSimulationStore = defineStore("simulation", () => {
         customerId: next.orderId,
         success: true,
         reason: "PRODUCTION_STARTED_FROM_QUEUE",
+        productName: next.name,
+        cost: next.cost,
         productIds: [next.productId],
         extra: {},
       });

@@ -4,6 +4,7 @@ import {
   IsString,
   IsOptional,
   IsArray,
+  IsNumber,
 } from 'class-validator';
 export class CreatePostEventDto {
   @IsNotEmpty()
@@ -21,6 +22,14 @@ export class CreatePostEventDto {
   @IsNotEmpty()
   @IsString()
   reason: string;
+
+  @IsNotEmpty()
+  @IsString()
+  productName: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  cost: number;
 
   @IsOptional()
   extraData?: unknown;

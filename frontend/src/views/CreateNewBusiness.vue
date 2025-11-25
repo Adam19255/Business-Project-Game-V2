@@ -47,10 +47,6 @@ async function createBusiness() {
 
 function clearForm() {
   form.name = "";
-  const fileInput = document.getElementById("businessImage") as HTMLInputElement;
-  if (fileInput) {
-    fileInput.value = "";
-  }
   form.queueCount = 0;
   form.productionSlotsCount = 0;
   form.deliveryTime = 0;
@@ -58,14 +54,10 @@ function clearForm() {
 </script>
 
 <template>
-  <h1>Create your business</h1>
+  <h1 class="title">Create your business</h1>
   <div class="preview">
     <div class="left-side">
       <form @submit.prevent="createBusiness">
-        <div class="form-item">
-          <label for="businessImage">Upload your business image:</label>
-          <input type="file" id="businessImage" name="businessImage" />
-        </div>
         <div class="form-item">
           <label for="businessName">Business Name:</label>
           <input
@@ -74,6 +66,7 @@ function clearForm() {
             id="businessName"
             name="businessName"
             placeholder="Business Name"
+            autofocus
             required />
         </div>
         <div class="form-item">
@@ -121,6 +114,9 @@ function clearForm() {
 </template>
 
 <style scoped>
+.title {
+  margin-bottom: 2rem;
+}
 .preview {
   display: flex;
   gap: 2rem;

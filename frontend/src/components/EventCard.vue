@@ -8,6 +8,8 @@ const props = defineProps<{
     customerId: string;
     success: boolean;
     reason: string;
+    productName: string;
+    cost: number;
     productIds: string[];
     extra: Record<string, any>;
     createdAt: string;
@@ -31,8 +33,11 @@ const extractCustomerId = (event: any) => {
     </div>
     <hr />
     <div class="card-content">
-      <p class="customer-id"><strong>Customer: </strong> #{{ extractCustomerId(event) }}</p>
-      <p class="products"><strong>Products: </strong>{{ event.productIds.join(", ") }}</p>
+      <div class="card-content-info">
+        <p class="customer-id"><strong>Customer: </strong> #{{ extractCustomerId(event) }}</p>
+        <p class="products"><strong>Product: </strong>{{ event.productName }}</p>
+      </div>
+      <p class="cost"><strong>$</strong>{{ event.cost }}</p>
     </div>
   </div>
 </template>
@@ -90,6 +95,18 @@ const extractCustomerId = (event: any) => {
   .products {
     font-size: 1.3rem;
     margin: 0.5rem 0;
+  }
+
+  .card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .cost {
+      font-size: 1.5rem;
+      color: #42b983;
+      font-weight: bold;
+    }
   }
 }
 </style>
