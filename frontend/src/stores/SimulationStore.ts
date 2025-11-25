@@ -16,7 +16,7 @@ export interface Customer {
   arrivalTime?: number;
   retries?: number;
   actionType?: "order" | "reorder" | "cancel";
-  originalOrderId?: string; // original order ID for reorder/cancel
+  originalOrderIds?: string | string[]; // original order ID for reorder/cancel
 }
 
 export interface Queue {
@@ -194,6 +194,10 @@ export const useSimulationStore = defineStore("simulation", () => {
         productIds: [c.productId],
         extra: {},
       });
+      existingOrders.value.splice(
+        existingOrders.value.findIndex((eo) => eo.order.orderId === c.orderId),
+        1
+      );
     }
     deliveries.value = deliveries.value.filter((d) => d.timeLeft > 0);
 
@@ -227,8 +231,13 @@ export const useSimulationStore = defineStore("simulation", () => {
   }
 
   async function handleCancelOrder(customer: Customer) {
-    const orderId = customer.originalOrderId;
-    if (!orderId) {
+    const orderIds = Array.isArray(customer.originalOrderIds)
+      ? customer.originalOrderIds
+      : customer.originalOrderIds
+      ? [customer.originalOrderIds]
+      : [];
+
+    if (orderIds.length === 0) {
       await emitOrderResult({
         businessId: businessStore.selectedBusiness?._id,
         customerId: customer.id,
@@ -239,82 +248,81 @@ export const useSimulationStore = defineStore("simulation", () => {
       return;
     }
 
-    // check if order is in production slots
-    const prodSlotIndex = productionSlots.value.findIndex((s) => s.orderId === orderId);
-    if (prodSlotIndex !== -1) {
-      // remove from production slots
-      const remove = productionSlots.value.splice(prodSlotIndex, 1)[0];
-      if (remove) {
+    // Cancel ALL orders for this customer
+    for (const orderId of orderIds) {
+      // check if order is in production slots
+      const prodSlotIndex = productionSlots.value.findIndex((s) => s.orderId === orderId);
+      if (prodSlotIndex !== -1) {
+        const remove = productionSlots.value.splice(prodSlotIndex, 1)[0];
+        if (remove) {
+          await emitOrderResult({
+            businessId: businessStore.selectedBusiness?._id,
+            customerId: customer.id,
+            success: true,
+            reason: "CANCEL_SUCCESSFUL_IN_PRODUCTION",
+            productIds: [remove.productId],
+            extra: { orderId },
+          });
+        }
+        continue;
+      }
+
+      // check if order is in creation queue
+      const queueIndex = creationQueue.value.findIndex((s) => s.orderId === orderId);
+      if (queueIndex !== -1) {
+        const remove = creationQueue.value.splice(queueIndex, 1)[0];
+        if (remove) {
+          await emitOrderResult({
+            businessId: businessStore.selectedBusiness?._id,
+            customerId: customer.id,
+            success: true,
+            reason: "CANCEL_SUCCESSFUL_IN_QUEUE",
+            productIds: [remove.productId],
+            extra: { orderId },
+          });
+        }
+        continue;
+      }
+
+      // check if order is in deliveries (not cancellable)
+      const deliveryIndex = deliveries.value.findIndex((d) => d.orderId === orderId);
+      if (deliveryIndex !== -1 && deliveries.value[deliveryIndex]) {
         await emitOrderResult({
           businessId: businessStore.selectedBusiness?._id,
           customerId: customer.id,
-          success: true,
-          reason: "CANCEL_SUCCESSFUL_IN_PRODUCTION",
-          productIds: [remove.productId],
+          success: false,
+          reason: "CANCEL_FAILED_ALREADY_IN_DELIVERY",
+          productIds: [deliveries.value[deliveryIndex].productId],
           extra: { orderId },
         });
-        existingOrders.value.splice(
-          existingOrders.value.findIndex((eo) => eo.order.orderId === orderId),
-          1
-        );
+        continue;
       }
 
-      // fill production slots from creation queue
-      fillProductionSlots();
-      return;
-    }
-
-    // check if order is in creation queue
-    const queueIndex = creationQueue.value.findIndex((s) => s.orderId === orderId);
-    if (queueIndex !== -1) {
-      // remove from creation queue
-      const remove = creationQueue.value.splice(queueIndex, 1)[0];
-      if (remove) {
-        await emitOrderResult({
-          businessId: businessStore.selectedBusiness?._id,
-          customerId: customer.id,
-          success: true,
-          reason: "CANCEL_SUCCESSFUL_IN_QUEUE",
-          productIds: [remove.productId],
-          extra: { orderId },
-        });
-        existingOrders.value.splice(
-          existingOrders.value.findIndex((eo) => eo.order.orderId === orderId),
-          1
-        );
-        return;
-      }
-    }
-
-    // check if order is in deliveries (not cancellable)
-    const deliveryIndex = deliveries.value.findIndex((d) => d.orderId === orderId);
-    if (deliveryIndex !== -1 && deliveries.value[deliveryIndex]) {
+      // order not found or already completed
       await emitOrderResult({
         businessId: businessStore.selectedBusiness?._id,
         customerId: customer.id,
         success: false,
-        reason: "CANCEL_FAILED_ALREADY_IN_DELIVERY",
-        productIds: [deliveries.value[deliveryIndex].productId],
+        reason: "CANCEL_FAILED_ORDER_NOT_FOUND",
+        productIds: [],
         extra: { orderId },
       });
-      return;
     }
 
-    // order not found or already completed
-    await emitOrderResult({
-      businessId: businessStore.selectedBusiness?._id,
-      customerId: customer.id,
-      success: false,
-      reason: "CANCEL_FAILED_ORDER_NOT_FOUND",
-      productIds: [],
-      extra: { orderId },
-    });
+    // fill production slots from creation queue after all cancellations
+    fillProductionSlots();
   }
 
   async function handleReorder(customer: Customer) {
-    const originalOrderId = customer.originalOrderId;
+    const orderIds = Array.isArray(customer.originalOrderIds)
+      ? customer.originalOrderIds
+      : customer.originalOrderIds
+      ? [customer.originalOrderIds]
+      : [];
+
     const newProductIds = customer.order ?? [];
-    if (!originalOrderId || newProductIds.length === 0) {
+
+    if (orderIds.length === 0 || newProductIds.length === 0) {
       await emitOrderResult({
         businessId: businessStore.selectedBusiness?._id,
         customerId: customer.id,
@@ -325,67 +333,136 @@ export const useSimulationStore = defineStore("simulation", () => {
       return;
     }
 
-    // find original order in production slots or queues
-    let originalSlot: ProductionSlot | undefined;
-    let isInProduction = false;
+    // Reorder ALL orders for this customer
+    for (const originalOrderId of orderIds) {
+      // find original order in production slots or queues
+      let originalSlot: ProductionSlot | undefined;
+      let isInProduction = false;
 
-    const prodIndex = productionSlots.value.findIndex((s) => s.orderId === originalOrderId);
-    if (prodIndex !== -1) {
-      originalSlot = productionSlots.value[prodIndex];
-      isInProduction = true;
-    } else {
-      const queueIndex = creationQueue.value.findIndex((s) => s.orderId === originalOrderId);
-      if (queueIndex !== -1) {
-        originalSlot = creationQueue.value[queueIndex];
-      }
-    }
-
-    // if original order not found or in delivery, process as new order
-    if (!originalSlot) {
-      await processRegularOrder(customer);
-      return;
-    }
-
-    // get the new product's materials
-    const newProduct = productStore.products.find((product) => String(product._id) === String(newProductIds[0]));
-    if (!newProduct) {
-      await emitOrderResult({
-        businessId: businessStore.selectedBusiness?._id,
-        customerId: customer.id,
-        success: false,
-        reason: "REORDER_FAILED_PRODUCT_NOT_FOUND",
-        productIds: newProductIds,
-      });
-      return;
-    }
-
-    // check for overlapping materials and reuse progress if possible
-    const originalProduct = productStore.products.find(
-      (product) => String(product._id) === String(originalSlot.productId)
-    );
-    if (!originalProduct) {
-      // original product deleted, process as new order
-      await processRegularOrder(customer);
-      return;
-    }
-
-    const overlappingMaterials = newProduct.materials.filter((materialId) =>
-      originalSlot!.materialsDone.includes(materialId)
-    );
-    if (overlappingMaterials.length === 0) {
-      // no overlap, process as new order
-      if (isInProduction) {
-        // remove original from production slots
-        productionSlots.value.splice(prodIndex, 1);
+      const prodIndex = productionSlots.value.findIndex((s) => s.orderId === originalOrderId);
+      if (prodIndex !== -1) {
+        originalSlot = productionSlots.value[prodIndex];
+        isInProduction = true;
       } else {
-        // remove original from creation queue
         const queueIndex = creationQueue.value.findIndex((s) => s.orderId === originalOrderId);
         if (queueIndex !== -1) {
-          creationQueue.value.splice(queueIndex, 1);
-          existingOrders.value.splice(
-            existingOrders.value.findIndex((eo) => eo.order.orderId === originalOrderId),
-            1
-          );
+          originalSlot = creationQueue.value[queueIndex];
+        }
+      }
+
+      // if original order not found or in delivery, process as new order
+      if (!originalSlot) {
+        // For this order, just skip it or log
+        await emitOrderResult({
+          businessId: businessStore.selectedBusiness?._id,
+          customerId: customer.id,
+          success: false,
+          reason: "REORDER_FAILED_ORDER_NOT_FOUND",
+          productIds: [],
+          extra: { originalOrderId },
+        });
+        continue;
+      }
+
+      // get the new product's materials (use first product from the new order)
+      const newProduct = productStore.products.find((product) => String(product._id) === String(newProductIds[0]));
+      if (!newProduct) {
+        await emitOrderResult({
+          businessId: businessStore.selectedBusiness?._id,
+          customerId: customer.id,
+          success: false,
+          reason: "REORDER_FAILED_PRODUCT_NOT_FOUND",
+          productIds: newProductIds,
+          extra: { originalOrderId },
+        });
+        continue;
+      }
+
+      // check for overlapping materials and reuse progress if possible
+      const originalProduct = productStore.products.find(
+        (product) => String(product._id) === String(originalSlot.productId)
+      );
+      if (!originalProduct) {
+        // original product deleted, remove and process as new order for this one
+        if (isInProduction) {
+          productionSlots.value.splice(prodIndex, 1);
+        } else {
+          const queueIndex = creationQueue.value.findIndex((s) => s.orderId === originalOrderId);
+          if (queueIndex !== -1) {
+            creationQueue.value.splice(queueIndex, 1);
+          }
+        }
+        continue;
+      }
+
+      const overlappingMaterials = newProduct.materials.filter((materialId) =>
+        originalSlot!.materialsDone.includes(materialId)
+      );
+
+      if (overlappingMaterials.length === 0) {
+        // no overlap, remove original and it will be recreated
+        if (isInProduction) {
+          productionSlots.value.splice(prodIndex, 1);
+        } else {
+          const queueIndex = creationQueue.value.findIndex((s) => s.orderId === originalOrderId);
+          if (queueIndex !== -1) {
+            creationQueue.value.splice(queueIndex, 1);
+          }
+        }
+
+        await emitOrderResult({
+          businessId: businessStore.selectedBusiness?._id,
+          customerId: customer.id,
+          success: true,
+          reason: "REORDER_PROCESSED_AS_NEW_ORDER",
+          productIds: newProductIds,
+          extra: { originalOrderId },
+        });
+        continue;
+      }
+
+      // there is overlap, calculate remaining times based on reused materials
+      const timeSaved = overlappingMaterials.reduce((total, materialId) => {
+        const material = materialStore.materials.find((m) => String(m._id) === String(materialId));
+        return total + (material ? Math.max(1, Math.floor(material.timeRequired)) : 0);
+      }, 0);
+
+      const totalNewTime = newProduct.materials.reduce((total, materialId) => {
+        const material = materialStore.materials.find((m) => String(m._id) === String(materialId));
+        return total + (material ? Math.max(1, Math.floor(material.timeRequired)) : 0);
+      }, 0);
+
+      const adjustedTotalTime = Math.max(1, totalNewTime - timeSaved);
+
+      let startMaterialIndex = 0;
+      for (let i = 0; i < newProduct.materials.length; i++) {
+        const materialId = newProduct.materials[i];
+        if (!materialId || !originalSlot.materialsDone.includes(materialId)) {
+          startMaterialIndex = i;
+          break;
+        }
+      }
+
+      const updatedSlot: ProductionSlot = {
+        id: originalSlot.id,
+        orderId: originalSlot.orderId,
+        productId: newProduct._id as string,
+        materialIndex: startMaterialIndex,
+        materialsDone: [...originalSlot.materialsDone],
+        materialTimeLeft: (() => {
+          const nextMaterialId = newProduct.materials[startMaterialIndex];
+          const material = materialStore.materials.find((m) => String(m._id) === String(nextMaterialId));
+          return material ? Math.max(1, Math.floor(material.timeRequired)) : 1;
+        })(),
+        totalTimeLeft: adjustedTotalTime,
+      };
+
+      if (isInProduction) {
+        productionSlots.value.splice(prodIndex, 1, updatedSlot);
+      } else {
+        const queueIndex = creationQueue.value.findIndex((s) => s.orderId === originalOrderId);
+        if (queueIndex !== -1) {
+          creationQueue.value.splice(queueIndex, 1, updatedSlot);
         }
       }
 
@@ -393,73 +470,14 @@ export const useSimulationStore = defineStore("simulation", () => {
         businessId: businessStore.selectedBusiness?._id,
         customerId: customer.id,
         success: true,
-        reason: "REORDER_PROCESSED_AS_NEW_ORDER",
-        productIds: newProductIds,
+        reason: "REORDER_SUCCESS_WITH_OVERLAP",
+        productIds: [newProduct._id as string],
+        extra: { originalOrderId, timeSaved, adjustedTotalTime, overlappingMaterials: overlappingMaterials.length },
       });
-
-      existingOrders.value.push({ order: { orderId: `order_${customer.id}_${Date.now()}`, customerId: customer.id } });
-
-      // process as new order
-      await processRegularOrder(customer);
-      return;
     }
 
-    // there is overlap, calculate remaining times based on reused materials
-    const timeSaved = overlappingMaterials.reduce((total, materialId) => {
-      const material = materialStore.materials.find((m) => String(m._id) === String(materialId));
-      return total + (material ? Math.max(1, Math.floor(material.timeRequired)) : 0);
-    }, 0);
-
-    // calculate total time for new product
-    const totalNewTime = newProduct.materials.reduce((total, materialId) => {
-      const material = materialStore.materials.find((m) => String(m._id) === String(materialId));
-      return total + (material ? Math.max(1, Math.floor(material.timeRequired)) : 0);
-    }, 0);
-
-    const adjustedTotalTime = Math.max(1, totalNewTime - timeSaved);
-
-    // find first material to process that is not already done
-    let startMaterialIndex = 0;
-    for (let i = 0; i < newProduct.materials.length; i++) {
-      const materialId = newProduct.materials[i];
-      if (!materialId || !originalSlot.materialsDone.includes(materialId)) {
-        startMaterialIndex = i;
-        break;
-      }
-    }
-
-    // update the original slot to the new product
-    const updatedSlot: ProductionSlot = {
-      id: originalSlot.id,
-      orderId: originalSlot.orderId,
-      productId: newProduct._id as string,
-      materialIndex: startMaterialIndex,
-      materialsDone: [...originalSlot.materialsDone],
-      materialTimeLeft: (() => {
-        const nextMaterialId = newProduct.materials[startMaterialIndex];
-        const material = materialStore.materials.find((m) => String(m._id) === String(nextMaterialId));
-        return material ? Math.max(1, Math.floor(material.timeRequired)) : 1;
-      })(),
-      totalTimeLeft: adjustedTotalTime,
-    };
-
-    // replace in appropriate queue
-    if (isInProduction) {
-      productionSlots.value.splice(prodIndex, 1, updatedSlot);
-    } else {
-      const queueIndex = creationQueue.value.findIndex((s) => s.orderId === originalOrderId);
-      if (queueIndex !== -1) {
-        creationQueue.value.splice(queueIndex, 1, updatedSlot);
-      }
-    }
-    await emitOrderResult({
-      businessId: businessStore.selectedBusiness?._id,
-      customerId: customer.id,
-      success: true,
-      reason: "REORDER_SUCCESS_WITH_OVERLAP",
-      productIds: [newProduct._id as string],
-      extra: { originalOrderId, timeSaved, adjustedTotalTime, overlappingMaterials: overlappingMaterials.length },
-    });
+    // After all reorders, process any new orders if needed
+    await processRegularOrder(customer);
   }
 
   async function processRegularOrder(customer: Customer) {
@@ -705,7 +723,7 @@ export const useSimulationStore = defineStore("simulation", () => {
       arrivalTime: customer.arrivalTime ?? Date.now(),
       retries: customer.retries ?? 0,
       actionType: customer.actionType ?? "order",
-      originalOrderId: customer.originalOrderId,
+      originalOrderIds: customer.originalOrderIds,
     };
 
     if (queues.value.length === 0) {
@@ -769,29 +787,26 @@ export const useSimulationStore = defineStore("simulation", () => {
     return enqueueCustomer({ order: chosen, priority: 0 });
   }
 
-  function addCancelCustomer(existingOrders: ExistingOrders[]) {
-    if (!existingOrders.length) return null;
-    const randomIndex = Math.floor(Math.random() * existingOrders.length);
-    const originalOrderId = existingOrders[randomIndex]?.order.orderId;
-    const customerId = existingOrders[randomIndex]?.order.customerId;
+  function addCancelCustomer() {
+    const originalOrderIds = getRandomOriginalOrderId();
+    if (!originalOrderIds || originalOrderIds.length === 0) {
+      console.warn("No original order ID provided for cancel");
+      return null;
+    }
     return enqueueCustomer({
-      id: customerId,
       order: [],
       priority: 1,
       actionType: "cancel",
-      originalOrderId,
+      originalOrderIds,
     });
   }
 
-  function addReorderCustomer(existingOrders: ExistingOrders[]) {
-    if (!existingOrders.length) {
+  function addReorderCustomer() {
+    const originalOrderIds = getRandomOriginalOrderId();
+    if (!originalOrderIds || originalOrderIds.length === 0) {
       console.warn("No original order ID provided for reorder");
       return null;
     }
-    const randomIndex = Math.floor(Math.random() * existingOrders.length);
-    const originalOrderId = existingOrders[randomIndex]?.order.orderId;
-    const customerId = existingOrders[randomIndex]?.order.customerId;
-
     const products = productStore.products;
     if (!products.length) return null;
     const count = Math.floor(Math.random() * products.length) + 1;
@@ -803,12 +818,52 @@ export const useSimulationStore = defineStore("simulation", () => {
       if (product && product._id) chosen.push(String(product._id));
     }
     return enqueueCustomer({
-      id: customerId,
       order: chosen,
       priority: 1,
       actionType: "reorder",
-      originalOrderId,
+      originalOrderIds,
     });
+  }
+
+  function getRandomOriginalOrderId(): string[] | null | undefined {
+    // gather all existing order IDs from production slots and deliveries
+    const existingOrderIds: string[] = [];
+    for (const slot of productionSlots.value) {
+      existingOrderIds.push(slot.orderId);
+    }
+    for (const delivery of deliveries.value) {
+      existingOrderIds.push(delivery.orderId);
+    }
+
+    if (existingOrderIds.length === 0) return null;
+
+    // Group orders by customer ID (the number after the second underscore)
+    const ordersByCustomer = new Map<string, string[]>();
+
+    for (const orderId of existingOrderIds) {
+      const parts = orderId.split("_");
+      const customerId = parts[3];
+
+      if (customerId) {
+        if (!ordersByCustomer.has(customerId)) {
+          ordersByCustomer.set(customerId, []);
+        }
+        ordersByCustomer.get(customerId)!.push(orderId);
+      }
+    }
+
+    // Get all unique customer IDs
+    const customerIds = Array.from(ordersByCustomer.keys());
+
+    if (customerIds.length === 0) return null;
+
+    // Pick a random customer
+    const randomCustomerId = customerIds[Math.floor(Math.random() * customerIds.length)];
+
+    if (!randomCustomerId) return null;
+
+    // Return all orders for that customer
+    return ordersByCustomer.get(randomCustomerId);
   }
 
   function addVipCustomer() {
@@ -852,7 +907,6 @@ export const useSimulationStore = defineStore("simulation", () => {
     creationQueue,
     productionSlots,
     deliveries,
-    existingOrders,
 
     // actions
     initForBusiness,
@@ -861,6 +915,7 @@ export const useSimulationStore = defineStore("simulation", () => {
     addRegularCustomer,
     addCancelCustomer,
     addReorderCustomer,
+    getRandomOriginalOrderId,
     addVipCustomer,
     addQueue,
     startTicking,
