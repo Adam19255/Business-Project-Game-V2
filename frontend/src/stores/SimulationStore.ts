@@ -1,4 +1,3 @@
-// src/stores/SimulationStore.ts
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { useBusinessStore } from "./BusinessStore";
@@ -43,13 +42,6 @@ export interface DeliveryItem {
   timeLeft: number; // time left until delivery is complete
 }
 
-export interface ExistingOrders {
-  order: {
-    orderId: string;
-    customerId: string;
-  };
-}
-
 interface OrderEventPayload {
   businessId: String | number | undefined;
   customerId: string;
@@ -70,7 +62,7 @@ export const useSimulationStore = defineStore("simulation", () => {
   const productionSlots = ref<ProductionSlot[]>([]);
   const deliveries = ref<DeliveryItem[]>([]);
   const tickHandle = ref<number | null>(null);
-  const existingOrders = ref<ExistingOrders[]>([]);
+  const priorityOneOrders = ref<string[]>([]);
 
   // get currently selected business
   function getBusiness() {
@@ -194,10 +186,6 @@ export const useSimulationStore = defineStore("simulation", () => {
         productIds: [c.productId],
         extra: {},
       });
-      existingOrders.value.splice(
-        existingOrders.value.findIndex((eo) => eo.order.orderId === c.orderId),
-        1
-      );
     }
     deliveries.value = deliveries.value.filter((d) => d.timeLeft > 0);
 
@@ -595,7 +583,6 @@ export const useSimulationStore = defineStore("simulation", () => {
           productIds: [prodSlot.productId],
           extra: { orderId: prodSlot.orderId },
         });
-        existingOrders.value.push({ order: { orderId: prodSlot.orderId, customerId: customer.id } });
       } else {
         creationQueue.value.push(prodSlot);
         await emitOrderResult({
@@ -606,7 +593,6 @@ export const useSimulationStore = defineStore("simulation", () => {
           productIds: [prodSlot.productId],
           extra: { orderId: prodSlot.orderId },
         });
-        existingOrders.value.push({ order: { orderId: prodSlot.orderId, customerId: customer.id } });
       }
     }
   }
@@ -650,10 +636,6 @@ export const useSimulationStore = defineStore("simulation", () => {
       productIds: [productId],
       extra: {},
     });
-    existingOrders.value.splice(
-      existingOrders.value.findIndex((eo) => eo.order.orderId === orderId),
-      1
-    );
   }
 
   // move items from creationQueue to productionSlots if there is free capacity
@@ -714,8 +696,16 @@ export const useSimulationStore = defineStore("simulation", () => {
 
   // adds a customer to a queue
   function enqueueCustomer(customer: Partial<Customer>) {
+    let customerExsitingId: string | undefined = "";
+    if (customer.actionType === "cancel" || customer.actionType === "reorder") {
+      const parts = customer.originalOrderIds?.[0]?.split("_") ?? [];
+      customerExsitingId = parts[3];
+    }
     const c: Customer = {
-      id: customer.id ?? `c_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      id:
+        customer.actionType === "cancel" || customer.actionType === "reorder"
+          ? customer.id ?? `c_${Date.now()}_${customerExsitingId}`
+          : customer.id ?? `c_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       priority: customer.priority ?? 0,
       order: customer.order ?? [],
       // customers ordering time between 2 and 6 seconds
@@ -789,6 +779,7 @@ export const useSimulationStore = defineStore("simulation", () => {
 
   function addCancelCustomer() {
     const originalOrderIds = getRandomOriginalOrderId();
+    priorityOneOrders.value.push(...(originalOrderIds ?? []));
     if (!originalOrderIds || originalOrderIds.length === 0) {
       console.warn("No original order ID provided for cancel");
       return null;
@@ -803,6 +794,7 @@ export const useSimulationStore = defineStore("simulation", () => {
 
   function addReorderCustomer() {
     const originalOrderIds = getRandomOriginalOrderId();
+    priorityOneOrders.value.push(...(originalOrderIds ?? []));
     if (!originalOrderIds || originalOrderIds.length === 0) {
       console.warn("No original order ID provided for reorder");
       return null;
@@ -837,10 +829,14 @@ export const useSimulationStore = defineStore("simulation", () => {
 
     if (existingOrderIds.length === 0) return null;
 
+    const filteredOrderIds = existingOrderIds.filter((id) => !priorityOneOrders.value.includes(id));
+
+    if (filteredOrderIds.length === 0) return null;
+
     // Group orders by customer ID (the number after the second underscore)
     const ordersByCustomer = new Map<string, string[]>();
 
-    for (const orderId of existingOrderIds) {
+    for (const orderId of filteredOrderIds) {
       const parts = orderId.split("_");
       const customerId = parts[3];
 

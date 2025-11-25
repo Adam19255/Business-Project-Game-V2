@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 const props = defineProps<{
   event: {
     _id: string;
@@ -11,6 +13,11 @@ const props = defineProps<{
     createdAt: string;
   };
 }>();
+
+const extractCustomerId = (event: any) => {
+  const parts = event.customerId?.split("_") ?? [];
+  return parts[3] || parts[parts.length - 1] || "Unknown";
+};
 </script>
 
 <template>
@@ -24,7 +31,7 @@ const props = defineProps<{
     </div>
     <hr />
     <div class="card-content">
-      <p class="customer-id"><strong>Customer: </strong>{{ event.customerId }}</p>
+      <p class="customer-id"><strong>Customer: </strong> #{{ extractCustomerId(event) }}</p>
       <p class="products"><strong>Products: </strong>{{ event.productIds.join(", ") }}</p>
     </div>
   </div>

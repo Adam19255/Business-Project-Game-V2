@@ -27,16 +27,16 @@ onMounted(() => {
       <button class="play-button" @click="simulation.addRegularCustomer">Add Regular Customer</button>
       <button
         class="play-button"
-        :class="{ disabled: simulation.deliveries.length === 0 }"
-        :disabled="simulation.existingOrders?.length === 0"
-        @click="simulation.addReorderCustomer(simulation.existingOrders)">
+        :class="{ disabled: simulation.productionSlots.length === 0 }"
+        :disabled="simulation.productionSlots.length === 0"
+        @click="simulation.addReorderCustomer()">
         Add Reorder Customer
       </button>
       <button
         class="play-button"
-        :class="{ disabled: simulation.deliveries.length === 0 }"
-        :disabled="simulation.existingOrders?.length === 0"
-        @click="simulation.addCancelCustomer(simulation.existingOrders)">
+        :class="{ disabled: simulation.productionSlots.length === 0 }"
+        :disabled="simulation.productionSlots.length === 0"
+        @click="simulation.addCancelCustomer()">
         Add Cancel Customer
       </button>
       <button class="play-button" @click="simulation.addVipCustomer">Add VIP Customer</button>
@@ -57,5 +57,10 @@ onMounted(() => {
   display: flex;
   gap: 1rem;
   margin-bottom: 3rem;
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
