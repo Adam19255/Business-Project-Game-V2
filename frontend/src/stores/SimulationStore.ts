@@ -219,7 +219,6 @@ export const useSimulationStore = defineStore("simulation", () => {
    * - For 'order': Standard order fulfillment
    */
   async function attemptFulfillOrder(queue: Queue, customer: Customer) {
-    ensureArrays();
     // customer wants to cancel
     if (customer.actionType === "cancel") {
       await handleCancelOrder(customer);
@@ -263,8 +262,10 @@ export const useSimulationStore = defineStore("simulation", () => {
           productIds: [remove.productId],
           extra: { orderId },
         });
-        const idxToRemove = existingOrders.value.findIndex((eo) => eo.order.orderId === orderId);
-        if (idxToRemove !== -1) existingOrders.value.splice(idxToRemove, 1);
+        existingOrders.value.splice(
+          existingOrders.value.findIndex((eo) => eo.order.orderId === orderId),
+          1
+        );
       }
 
       // fill production slots from creation queue
@@ -286,8 +287,10 @@ export const useSimulationStore = defineStore("simulation", () => {
           productIds: [remove.productId],
           extra: { orderId },
         });
-        const idxToRemove2 = existingOrders.value.findIndex((eo) => eo.order.orderId === orderId);
-        if (idxToRemove2 !== -1) existingOrders.value.splice(idxToRemove2, 1);
+        existingOrders.value.splice(
+          existingOrders.value.findIndex((eo) => eo.order.orderId === orderId),
+          1
+        );
         return;
       }
     }
@@ -469,7 +472,6 @@ export const useSimulationStore = defineStore("simulation", () => {
   }
 
   async function processRegularOrder(customer: Customer) {
-    ensureArrays();
     const productIds = customer.order ?? [];
     if (!productIds.length) {
       await emitOrderResult({
@@ -619,7 +621,6 @@ export const useSimulationStore = defineStore("simulation", () => {
 
   // start delivery for completed production
   async function startDelivery(orderId: string, productId: string) {
-    ensureArrays();
     const business = getBusiness();
     const deliveryTime = business?.deliveryTime ?? 5;
     deliveries.value.push({
@@ -640,13 +641,14 @@ export const useSimulationStore = defineStore("simulation", () => {
       productIds: [productId],
       extra: {},
     });
-    const idxToRemove3 = existingOrders.value.findIndex((eo) => eo.order.orderId === orderId);
-    if (idxToRemove3 !== -1) existingOrders.value.splice(idxToRemove3, 1);
+    existingOrders.value.splice(
+      existingOrders.value.findIndex((eo) => eo.order.orderId === orderId),
+      1
+    );
   }
 
   // move items from creationQueue to productionSlots if there is free capacity
   async function fillProductionSlots() {
-    ensureArrays();
     const business = getBusiness();
     if (!business) return;
 
@@ -686,8 +688,6 @@ export const useSimulationStore = defineStore("simulation", () => {
 
   // insert customer into specified queue respecting priority
   function insertIntoQueue(q: Queue, cust: Customer) {
-    // ensure customers array exists
-    if (!Array.isArray(q.customers)) q.customers = [];
     // we start at index 1 to never skip the person currently being served
     let insertIndex = Math.min(1, q.customers.length);
 
@@ -705,7 +705,6 @@ export const useSimulationStore = defineStore("simulation", () => {
 
   // adds a customer to a queue
   function enqueueCustomer(customer: Partial<Customer>) {
-    ensureArrays();
     const c: Customer = {
       id: customer.id ?? `c_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       priority: customer.priority ?? 0,
@@ -737,7 +736,6 @@ export const useSimulationStore = defineStore("simulation", () => {
     // collect all customers from all queues
     const all: Customer[] = [];
     for (const q of queues.value) {
-      if (!Array.isArray(q.customers)) q.customers = [];
       for (const c of q.customers) all.push(c);
       q.customers = [];
     }
