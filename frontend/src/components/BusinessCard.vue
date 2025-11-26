@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import ImagePlaceholder from "@/assets/placeholders/image-placeholder.jpg";
-import NoImage from "@/assets/placeholders/no-image.png";
+import Business from "@/assets/placeholders/business.svg";
 
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/BusinessStore";
@@ -27,12 +26,12 @@ async function loadBusiness() {
 
 <template>
   <div class="business-card">
-    <img
-      :src="props.business.id === 'preview' ? NoImage : ImagePlaceholder"
-      alt="Business Image"
-      class="business-image" />
+    <div class="business-image-wrapper">
+      <img :src="Business" alt="Business Image" class="business-image" />
+    </div>
     <div class="business-details">
       <h2>{{ props.business.name.length > 22 ? props.business.name.slice(0, 22) + "..." : props.business.name }}</h2>
+      <p>Queue Count: {{ props.business.queueCount }}</p>
       <p>Production Slots: {{ props.business.productionSlotsCount }}</p>
       <p>Delivery Time: {{ props.business.deliveryTime }} seconds</p>
     </div>
@@ -50,13 +49,20 @@ async function loadBusiness() {
   flex-direction: column;
   align-items: center;
 
-  .business-image {
+  .business-image-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f0;
     width: 100%;
     height: 30rem;
-    object-fit: cover;
     border-radius: 2.5rem;
     margin-bottom: 1rem;
-    background-color: #f0f0f0;
+
+    .business-image {
+      width: 17rem;
+      object-fit: cover;
+    }
   }
 
   .business-details {

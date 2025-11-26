@@ -105,6 +105,7 @@ function clearForm() {
         :business="{
           id: 'preview',
           name: form.name || 'Business Name',
+          queueCount: form.queueCount,
           productionSlotsCount: form.productionSlotsCount,
           deliveryTime: form.deliveryTime,
           products: [],
@@ -169,6 +170,11 @@ function clearForm() {
     flex: 1;
     display: flex;
     justify-content: center;
+
+    .business-card {
+      width: 100%;
+      max-width: 40rem;
+    }
   }
 }
 </style>

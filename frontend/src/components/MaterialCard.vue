@@ -1,20 +1,45 @@
 <script setup lang="ts">
-import NoImage from "@/assets/placeholders/no-image.png";
 import MaterialPlaceholder from "@/assets/placeholders/material-placeholder.jpg";
+import Buns from "@/assets/icons/buns.svg";
+import Lettuce from "@/assets/icons/lettuce.svg";
+import Tomato from "@/assets/icons/tomato.svg";
+import Oil from "@/assets/icons/oil.svg";
+import Patty from "@/assets/icons/patty.svg";
+import Onion from "@/assets/icons/onion.svg";
+import Pickle from "@/assets/icons/pickle.svg";
+import Potato from "@/assets/icons/potato.svg";
+import { computed } from "vue";
 
 const props = defineProps<{ material: any }>();
 const emit = defineEmits<{
   (e: "edit", material: any): void;
   (e: "delete", id: string | number): void;
 }>();
+
+const ICONS: Record<string, string> = {
+  buns: Buns,
+  lettuce: Lettuce,
+  tomato: Tomato,
+  oil: Oil,
+  patty: Patty,
+  onion: Onion,
+  pickle: Pickle,
+  potato: Potato,
+};
+
+const iconSrc = computed(() => {
+  const name = String(props.material?.name ?? "")
+    .toLowerCase()
+    .trim();
+  return ICONS[name] ?? MaterialPlaceholder;
+});
 </script>
 
 <template>
   <div class="material-card">
-    <img
-      :src="props.material._id === 'preview' ? NoImage : MaterialPlaceholder"
-      alt="Material Image"
-      class="material-image" />
+    <div class="material-image-wrapper">
+      <img :src="iconSrc" alt="Material Image" class="material-image" />
+    </div>
     <div class="material-details">
       <h2>{{ props.material.name.length > 22 ? props.material.name.slice(0, 22) + "..." : props.material.name }}</h2>
       <p>Time Required: {{ props.material.timeRequired }} seconds</p>
@@ -75,13 +100,20 @@ const emit = defineEmits<{
   padding: 1.5rem;
   background-color: white;
 
-  .material-image {
+  .material-image-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f0;
     width: 100%;
     height: 15rem;
-    object-fit: cover;
     border-radius: 2.5rem;
     margin-bottom: 1rem;
-    background-color: #f0f0f0;
+
+    .material-image {
+      width: 10rem;
+      object-fit: cover;
+    }
   }
 
   .material-details {

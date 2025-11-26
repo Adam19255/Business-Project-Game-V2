@@ -1,16 +1,35 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import ProductPlaceholder from "../assets/placeholders/product-placeholder.jpg";
+import Fries from "@/assets/icons/fries.svg";
+import OnionRings from "@/assets/icons/onion-rings.svg";
+import Hamburger from "@/assets/icons/hamburger.svg";
 
 const props = defineProps<{ product: any }>();
 const emit = defineEmits<{
   (e: "edit", id: string | number): void;
   (e: "delete", id: string | number): void;
 }>();
+
+const ICONS: Record<string, string> = {
+  fries: Fries,
+  "onion rings": OnionRings,
+  hamburger: Hamburger,
+};
+
+const iconSrc = computed(() => {
+  const name = String(props.product?.name ?? "")
+    .toLowerCase()
+    .trim();
+  return ICONS[name] ?? ProductPlaceholder;
+});
 </script>
 
 <template>
   <div class="product-card">
-    <img :src="ProductPlaceholder" alt="Product Image" class="product-image" />
+    <div class="product-image-wrapper">
+      <img :src="iconSrc" alt="Product Image" class="product-image" />
+    </div>
     <div class="product-details">
       <h2 class="product-name">{{ product.name.length > 20 ? product.name.slice(0, 20) + "..." : product.name }}</h2>
       <p class="product-price">$ {{ product.price.toFixed(2) }}</p>
@@ -71,13 +90,20 @@ const emit = defineEmits<{
   padding: 1.5rem;
   background-color: white;
 
-  .product-image {
+  .product-image-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f0;
     width: 100%;
     height: 20rem;
-    object-fit: cover;
     border-radius: 2.5rem;
     margin-bottom: 1rem;
-    background-color: #f0f0f0;
+
+    .product-image {
+      width: 15rem;
+      object-fit: cover;
+    }
   }
 
   .product-details {
