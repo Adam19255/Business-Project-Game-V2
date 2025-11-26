@@ -3,6 +3,7 @@ import { onMounted } from "vue";
 import { useSimulationStore } from "@/stores/SimulationStore";
 import { useBusinessStore } from "@/stores/BusinessStore";
 import Queue from "@/components/Queue.vue";
+import ProductionSlot from "@/components/ProductionSlot.vue";
 
 const simulation = useSimulationStore();
 const businessStore = useBusinessStore();
@@ -109,8 +110,12 @@ onMounted(() => {
     </div>
 
     <Queue v-for="queue in simulation.queues" :key="queue.id" :queue="queue" />
-    <h2>Production Slots</h2>
-    <pre>{{ simulation.productionSlots }}</pre>
+
+    <div class="production-section">
+      <h2>Production Slots</h2>
+      <p>In queue: {{ simulation.creationQueue.length }}</p>
+    </div>
+    <ProductionSlot v-for="slot in simulation.productionSlots" :key="slot.id" :slot="slot" />
 
     <h2>Deliveries</h2>
     <pre>{{ simulation.deliveries }}</pre>
@@ -151,6 +156,22 @@ onMounted(() => {
     font-size: 2.5rem;
     font-weight: bold;
     margin: 0.1rem 0 0;
+  }
+}
+
+.production-section {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+
+  h2 {
+    color: #42b983;
+    font-size: 2.5rem;
+  }
+
+  p {
+    font-size: 1.5rem;
+    color: #666;
   }
 }
 </style>
