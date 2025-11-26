@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { useProductStore } from "@/stores/ProductStore";
 import { useBusinessStore } from "@/stores/BusinessStore";
 import { useMaterialStore } from "@/stores/MaterialStore";
+import { useToastStore } from "@/stores/ToastStore";
 import ProductCard from "../components/ProductCard.vue";
 import Modal from "../components/Modal.vue";
 import MultiSelectListbox from "@/components/MultiSelectListbox.vue";
@@ -25,6 +26,7 @@ const materialOptions = computed(() =>
 const productStore = useProductStore();
 const businessStore = useBusinessStore();
 const materialStore = useMaterialStore();
+const toastStore = useToastStore();
 const selected = ref(businessStore.selectedBusiness);
 const modalVisible = ref(false);
 const draft = ref<ProductDraft>({ name: "", price: 0, materials: [] as string[] });
@@ -41,7 +43,10 @@ async function submitNewProduct() {
     draft.value.materials == null ||
     draft.value.materials.length === 0
   ) {
-    alert("Please fill all fields.");
+    toastStore.addToast({
+      type: "error",
+      message: "Please fill all fields.",
+    });
     return;
   }
   await productStore.createProduct({
@@ -73,7 +78,10 @@ async function saveEdit() {
     draft.value.materials == null ||
     draft.value.materials.length === 0
   ) {
-    alert("Please fill all fields.");
+    toastStore.addToast({
+      type: "error",
+      message: "Please fill all fields.",
+    });
     return;
   }
   await productStore.updateProduct(editingId.value as string | number, {
@@ -153,6 +161,7 @@ async function confirmDelete() {
     v-model:modelValue="modalVisible"
     title="Add new product"
     okButtonText="Add"
+    :closeOnOk="false"
     @ok="submitNewProduct"
     @cancel="() => (modalVisible = false)">
     <form class="add-form">
@@ -176,6 +185,7 @@ async function confirmDelete() {
     :title="`Edit Product: ${productName}`"
     okButtonText="Save"
     cancelButtonText="Cancel"
+    :closeOnOk="false"
     @ok="saveEdit"
     @cancel="() => ((editModalVisible = false), (editingId = null))">
     <form class="add-form">

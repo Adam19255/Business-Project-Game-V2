@@ -6,13 +6,14 @@ const props = defineProps({
   cancelButtonText: { type: String, default: "Cancel" },
   okButtonClass: { type: String, default: "primary-button" },
   cancelButtonClass: { type: String, default: "secondary-button" },
+  closeOnOk: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(["ok", "cancel", "update:modelValue"]);
 
 function onOk() {
   emit("ok");
-  emit("update:modelValue", false);
+  if (props.closeOnOk) emit("update:modelValue", false);
 }
 
 function onCancel() {

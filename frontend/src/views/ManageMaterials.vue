@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useMaterialStore } from "@/stores/MaterialStore";
 import { useBusinessStore } from "@/stores/BusinessStore";
+import { useToastStore } from "@/stores/ToastStore";
 import MaterialCard from "@/components/MaterialCard.vue";
 import Modal from "@/components/Modal.vue";
 
@@ -13,6 +14,7 @@ interface MaterialDraft {
 
 const materialStore = useMaterialStore();
 const businessStore = useBusinessStore();
+const toastStore = useToastStore();
 const selected = ref(businessStore.selectedBusiness);
 
 const editingId = ref<string | null>(null);
@@ -28,7 +30,10 @@ const deleteTargetId = ref<string | number | null>(null);
 
 async function submitNewMaterial() {
   if (!newItemDraft.value.name || newItemDraft.value.timeRequired == null || newItemDraft.value.stock == null) {
-    alert("Please fill all fields.");
+    toastStore.addToast({
+      type: "error",
+      message: "Please fill all fields.",
+    });
     return;
   }
   await materialStore.createMaterial({
@@ -50,7 +55,10 @@ function startEdit(material: MaterialDraft & { _id: string | number }) {
 async function saveEdit() {
   if (!editingId.value) return;
   if (!draft.value.name || draft.value.timeRequired == null || draft.value.stock == null) {
-    alert("Please fill all fields.");
+    toastStore.addToast({
+      type: "error",
+      message: "Please fill all fields.",
+    });
     return;
   }
   await materialStore.updateMaterial(editingId.value, {
@@ -124,6 +132,7 @@ async function confirmDelete() {
     v-model:modelValue="addModalVisible"
     title="Add new material"
     okButtonText="Add"
+    :closeOnOk="false"
     @ok="submitNewMaterial"
     @cancel="() => (addModalVisible = false)">
     <div class="edit-form">
@@ -147,6 +156,7 @@ async function confirmDelete() {
     :title="`Edit Material: ${materialName}`"
     okButtonText="Save"
     cancelButtonText="Cancel"
+    :closeOnOk="false"
     @ok="saveEdit"
     @cancel="() => ((modalVisible = false), (editingId = null))">
     <div class="edit-form">

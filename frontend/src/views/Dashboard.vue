@@ -84,7 +84,7 @@ onMounted(() => {
       </svg>
       <p class="revenue-number">{{ businessStore.selectedBusiness?.revenue ?? 0 }}</p>
     </div>
-    <h1>Business Dashboard</h1>
+    <h1 class="dashboard-title">Business Dashboard</h1>
 
     <div class="controls">
       <button class="play-button" @click="simulation.startTicking">Start</button>
@@ -118,6 +118,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.dashboard-title {
+  margin-bottom: 2rem;
+}
+
 .controls {
   display: flex;
   gap: 1rem;
