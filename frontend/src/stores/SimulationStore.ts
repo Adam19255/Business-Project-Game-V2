@@ -867,7 +867,7 @@ export const useSimulationStore = defineStore("simulation", () => {
         else type = "error";
         const toastStore = useToastStore();
         const msg = `${payload.reason} ${payload.warning ? `(${payload.extra.retries ?? 0} tries)` : ""}`;
-        toastStore.addToast({ type: type as any, message: msg, timer: 4000 });
+        toastStore.addToast({ type: type as any, message: msg });
       }
     } catch (e) {
       // non-fatal

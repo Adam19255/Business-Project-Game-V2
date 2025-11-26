@@ -51,8 +51,6 @@ export const useMaterialStore = defineStore("material", {
         const body = { ...payload, businessId: String(id) };
         const res = await axios.post<Material>(`${API_BASE}/material`, body);
         this.materials.push(res.data);
-        const toastStore = useToastStore();
-        toastStore.addToast({ type: "success", message: "Material created successfully" });
         return res.data;
       } catch (error) {
         console.error("Error creating material:", error);
@@ -70,8 +68,6 @@ export const useMaterialStore = defineStore("material", {
         const res = await axios.patch<Material>(`${API_BASE}/material/${id}`, update);
         const idx = this.materials.findIndex((m) => String(m._id) === String(id));
         if (idx !== -1) this.materials.splice(idx, 1, res.data);
-        const toastStore = useToastStore();
-        toastStore.addToast({ type: "success", message: "Material updated successfully" });
         return res.data;
       } catch (error) {
         console.error("Error updating material:", error);
@@ -88,8 +84,6 @@ export const useMaterialStore = defineStore("material", {
       try {
         await axios.delete(`${API_BASE}/material/${id}`);
         this.materials = this.materials.filter((m) => String(m._id) !== String(id));
-        const toastStore = useToastStore();
-        toastStore.addToast({ type: "success", message: "Material deleted successfully" });
       } catch (error) {
         console.error("Error deleting material:", error);
         const toastStore = useToastStore();

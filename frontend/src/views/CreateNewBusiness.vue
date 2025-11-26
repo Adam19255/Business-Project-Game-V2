@@ -2,6 +2,7 @@
 import { reactive } from "vue";
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/BusinessStore";
+import { useToastStore } from "@/stores/ToastStore";
 import BusinessCard from "../components/BusinessCard.vue";
 
 interface NewBusinessForm {
@@ -13,6 +14,7 @@ interface NewBusinessForm {
 
 const router = useRouter();
 const businessStore = useBusinessStore();
+const toastStore = useToastStore();
 
 const form = reactive<NewBusinessForm>({
   name: "",
@@ -22,7 +24,10 @@ const form = reactive<NewBusinessForm>({
 });
 
 async function createBusiness() {
-  if (!form.name.trim()) return alert("Name is required");
+  if (!form.name.trim()) {
+    toastStore.addToast({ type: "error", message: "Business name is required." });
+    return;
+  }
 
   const payload = {
     name: form.name.trim(),
@@ -33,6 +38,7 @@ async function createBusiness() {
 
   try {
     await businessStore.createBusiness(payload);
+    toastStore.addToast({ type: "success", message: "Business created successfully." });
 
     // Reset form
     clearForm();
@@ -41,7 +47,7 @@ async function createBusiness() {
     router.push({ name: "ShowAllBusinesses" });
   } catch (err: any) {
     console.error(err);
-    alert(`Failed to create business: ${err.message || err}`);
+    toastStore.addToast({ type: "error", message: `Failed to create business: ${err.message || err}` });
   }
 }
 

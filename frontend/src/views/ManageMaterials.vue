@@ -41,6 +41,7 @@ async function submitNewMaterial() {
     timeRequired: Number(newItemDraft.value.timeRequired),
     stock: Number(newItemDraft.value.stock),
   });
+  toastStore.addToast({ type: "success", message: "Material added successfully." });
   addModalVisible.value = false;
   newItemDraft.value = { name: "", timeRequired: 0, stock: 0 };
 }
@@ -66,6 +67,7 @@ async function saveEdit() {
     timeRequired: Number(draft.value.timeRequired),
     stock: Number(draft.value.stock),
   });
+  toastStore.addToast({ type: "success", message: "Material updated successfully." });
   editingId.value = null;
   modalVisible.value = false;
 }
@@ -78,6 +80,7 @@ function onDeleteRequested(id: string | number | undefined) {
 async function confirmDelete() {
   if (deleteTargetId.value == null) return;
   await materialStore.deleteMaterial(deleteTargetId.value as string | number);
+  toastStore.addToast({ type: "success", message: "Material deleted successfully." });
   deleteTargetId.value = null;
   deleteModalVisible.value = false;
 }

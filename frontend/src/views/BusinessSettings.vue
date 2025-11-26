@@ -2,9 +2,11 @@
 import { computed, reactive, watch, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/BusinessStore";
+import { useToastStore } from "@/stores/ToastStore";
 import Modal from "@/components/Modal.vue";
 
 const businessStore = useBusinessStore();
+const toastStore = useToastStore();
 const selected = computed(() => businessStore.selectedBusiness);
 const router = useRouter();
 
@@ -32,7 +34,10 @@ watch(
 );
 
 async function save() {
-  if (!selected.value || !selected.value._id) return alert("No business selected");
+  if (!selected.value || !selected.value._id) {
+    toastStore.addToast({ type: "error", message: "No business selected." });
+    return;
+  }
 
   const payload = {
     name: form.name.trim(),
@@ -43,10 +48,10 @@ async function save() {
 
   try {
     await businessStore.updateBusiness(selected.value._id as string | number, payload);
-    alert("Business settings saved.");
+    toastStore.addToast({ type: "success", message: "Business settings saved." });
   } catch (err) {
     console.error(err);
-    alert("Failed to save settings. See console for details.");
+    toastStore.addToast({ type: "error", message: "Failed to save settings. See console for details." });
   }
 }
 
@@ -66,6 +71,7 @@ function onDeleteRequested(id: string | number | undefined) {
 async function confirmDelete() {
   if (deleteTargetId.value == null) return;
   await businessStore.deleteBusiness(deleteTargetId.value as string | number);
+  toastStore.addToast({ type: "success", message: "Business deleted successfully." });
   deleteTargetId.value = null;
   deleteModalVisible.value = false;
   router.push("/business/all");

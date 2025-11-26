@@ -47,8 +47,6 @@ export const useProductStore = defineStore("product", {
         const body = { ...payload, businessId: String(id) };
         const res = await axios.post<Product>(`${API_BASE}/product`, body);
         this.products.push(res.data);
-        const toastStore = useToastStore();
-        toastStore.addToast({ type: "success", message: "Product created successfully" });
         return res.data;
       } catch (error) {
         console.error("Error creating product:", error);
@@ -66,8 +64,6 @@ export const useProductStore = defineStore("product", {
         const res = await axios.patch<Product>(`${API_BASE}/product/${id}`, update);
         const idx = this.products.findIndex((p) => String(p._id) === String(id));
         if (idx !== -1) this.products.splice(idx, 1, res.data);
-        const toastStore = useToastStore();
-        toastStore.addToast({ type: "success", message: "Product updated successfully" });
         return res.data;
       } catch (error) {
         console.error("Error updating product:", error);
@@ -84,8 +80,6 @@ export const useProductStore = defineStore("product", {
       try {
         await axios.delete(`${API_BASE}/product/${id}`);
         this.products = this.products.filter((p) => String(p._id) !== String(id));
-        const toastStore = useToastStore();
-        toastStore.addToast({ type: "success", message: "Product deleted successfully" });
       } catch (error) {
         console.error("Error deleting product:", error);
         const toastStore = useToastStore();

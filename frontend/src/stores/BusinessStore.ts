@@ -27,8 +27,6 @@ export const useBusinessStore = defineStore("business", {
       try {
         const res = await axios.post<Business>(`${API_BASE}/business`, business);
         this.businesses.push(res.data);
-        const toastStore = useToastStore();
-        toastStore.addToast({ type: "success", message: "Business created successfully" });
         return res.data;
       } catch (error) {
         console.error("Error creating business:", error);
@@ -48,6 +46,8 @@ export const useBusinessStore = defineStore("business", {
         return this.businesses;
       } catch (error) {
         console.error("Error fetching businesses:", error);
+        const toastStore = useToastStore();
+        toastStore.addToast({ type: "error", message: "Error fetching businesses" });
         throw error;
       } finally {
         this.isLoading = false;
@@ -101,8 +101,6 @@ export const useBusinessStore = defineStore("business", {
         if (this.selectedBusiness && String(this.selectedBusiness._id) === String(id)) {
           this.selectedBusiness = updated;
         }
-        const toastStore = useToastStore();
-        toastStore.addToast({ type: "success", message: "Business updated successfully" });
         return updated;
       } catch (error) {
         console.error("Error updating business:", error);
@@ -122,8 +120,6 @@ export const useBusinessStore = defineStore("business", {
         if (this.selectedBusiness && String(this.selectedBusiness._id) === String(id)) {
           this.selectedBusiness = null;
         }
-        const toastStore = useToastStore();
-        toastStore.addToast({ type: "success", message: "Business deleted successfully" });
       } catch (error) {
         console.error("Error deleting business:", error);
         const toastStore = useToastStore();

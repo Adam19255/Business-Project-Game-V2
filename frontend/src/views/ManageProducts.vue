@@ -54,6 +54,7 @@ async function submitNewProduct() {
     price: Number(draft.value.price),
     materials: draft.value.materials,
   });
+  toastStore.addToast({ type: "success", message: "Product added successfully." });
   modalVisible.value = false;
   draft.value = { name: "", price: 0, materials: [] };
 }
@@ -89,6 +90,7 @@ async function saveEdit() {
     price: Number(draft.value.price),
     materials: draft.value.materials,
   });
+  toastStore.addToast({ type: "success", message: "Product updated successfully." });
   editModalVisible.value = false;
   editingId.value = null;
 }
@@ -101,6 +103,7 @@ function onDeleteRequested(id: string | number | undefined) {
 async function confirmDelete() {
   if (deleteTargetId.value == null) return;
   await productStore.deleteProduct(deleteTargetId.value as string | number);
+  toastStore.addToast({ type: "success", message: "Product deleted successfully." });
   deleteTargetId.value = null;
   deleteModalVisible.value = false;
 }
