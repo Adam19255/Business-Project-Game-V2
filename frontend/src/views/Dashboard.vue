@@ -4,6 +4,7 @@ import { useSimulationStore } from "@/stores/SimulationStore";
 import { useBusinessStore } from "@/stores/BusinessStore";
 import Queue from "@/components/Queue.vue";
 import ProductionSlot from "@/components/ProductionSlot.vue";
+import Deliveries from "@/components/Deliveries.vue";
 
 const simulation = useSimulationStore();
 const businessStore = useBusinessStore();
@@ -117,8 +118,15 @@ onMounted(() => {
     </div>
     <ProductionSlot v-for="slot in simulation.productionSlots" :key="slot.id" :slot="slot" />
 
-    <h2>Deliveries</h2>
-    <pre>{{ simulation.deliveries }}</pre>
+    <div class="delivery-section">
+      <div class="delivery-header">
+        <h2>Deliveries</h2>
+        <p>Delivering: {{ simulation.deliveries.length }}</p>
+      </div>
+      <div class="deliveries-component">
+        <Deliveries v-for="delivery in simulation.deliveries" :key="delivery.id" :delivery="delivery" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -172,6 +180,37 @@ onMounted(() => {
   p {
     font-size: 1.5rem;
     color: #666;
+  }
+}
+
+.delivery-section {
+  margin-top: 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+
+  .delivery-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+
+    h2 {
+      color: #42b983;
+      font-size: 2.5rem;
+      margin: 0;
+    }
+
+    p {
+      font-size: 1.5rem;
+      color: #666;
+      margin: 0;
+    }
+  }
+
+  .deliveries-component {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
   }
 }
 </style>
