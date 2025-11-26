@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import ImagePlaceholder from "@/assets/image-placeholder.jpg";
-import NoImage from "@/assets/no-image.png";
+import ImagePlaceholder from "@/assets/placeholders/image-placeholder.jpg";
+import NoImage from "@/assets/placeholders/no-image.png";
 
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/BusinessStore";

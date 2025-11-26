@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import NoImage from "@/assets/no-image.png";
-import MaterialPlaceholder from "@/assets/material-placeholder.jpg";
+import NoImage from "@/assets/placeholders/no-image.png";
+import MaterialPlaceholder from "@/assets/placeholders/material-placeholder.jpg";
 
 const props = defineProps<{ material: any }>();
 const emit = defineEmits<{

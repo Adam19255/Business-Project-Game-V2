@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ProductPlaceholder from "../assets/product-placeholder.jpg";
+import ProductPlaceholder from "../assets/placeholders/product-placeholder.jpg";
 
 const props = defineProps<{ product: any }>();
 const emit = defineEmits<{
