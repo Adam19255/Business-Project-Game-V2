@@ -2,10 +2,9 @@
 import Sidebar from "./views/sidebar.vue";
 import { onMounted } from "vue";
 import { useBusinessStore } from "@/stores/BusinessStore";
-import { useSimulationStore } from "@/stores/SimulationStore";
+import MessagesStack from "@/components/MessagesStack.vue";
 
 const businessStore = useBusinessStore();
-const simulationStore = useSimulationStore();
 
 onMounted(() => {
   businessStore.fetchBusinesses();
@@ -15,6 +14,7 @@ onMounted(() => {
 <template>
   <Sidebar />
   <div class="content-container">
+    <MessagesStack />
     <router-view />
   </div>
 </template>

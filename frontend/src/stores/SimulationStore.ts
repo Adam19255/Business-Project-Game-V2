@@ -4,6 +4,7 @@ import { useBusinessStore } from "./BusinessStore";
 import { useProductStore } from "./ProductStore";
 import { useMaterialStore } from "./MaterialStore";
 import axios from "axios";
+import { useToastStore } from "./ToastStore";
 
 const API_BASE = "http://localhost:3000";
 
@@ -57,6 +58,7 @@ interface OrderEventPayload {
   cost: number;
   productIds: string[];
   extra?: any;
+  warning?: boolean;
 }
 
 export const useSimulationStore = defineStore("simulation", () => {
@@ -352,7 +354,8 @@ export const useSimulationStore = defineStore("simulation", () => {
             productName: remove.name,
             productIds: [remove.productId],
             cost: remove.cost,
-            extra: { orderId },
+            extra: { orderId, showMessage: true },
+            warning: false,
           });
         }
         continue;
@@ -371,7 +374,8 @@ export const useSimulationStore = defineStore("simulation", () => {
             productName: remove.name,
             productIds: [remove.productId],
             cost: remove.cost,
-            extra: { orderId },
+            extra: { orderId, showMessage: true },
+            warning: false,
           });
         }
         continue;
@@ -521,7 +525,8 @@ export const useSimulationStore = defineStore("simulation", () => {
           productName: newProduct.name,
           productIds: newProductIds,
           cost: newProduct.price,
-          extra: { originalOrderId },
+          extra: { originalOrderId, showMessage: true },
+          warning: false,
         });
         continue;
       }
@@ -584,7 +589,14 @@ export const useSimulationStore = defineStore("simulation", () => {
         productName: newProduct.name,
         productIds: [newProduct._id as string],
         cost: newProduct.price,
-        extra: { originalOrderId, timeSaved, adjustedTotalTime, overlappingMaterials: overlappingMaterials.length },
+        extra: {
+          originalOrderId,
+          timeSaved,
+          adjustedTotalTime,
+          overlappingMaterials: overlappingMaterials.length,
+          showMessage: true,
+        },
+        warning: false,
       });
     }
 
@@ -664,6 +676,7 @@ export const useSimulationStore = defineStore("simulation", () => {
         productIds: productIds,
         cost: 0,
         extra: { customerMoney, retries: newRetries },
+        warning: true,
       });
 
       // if retries remain, re-enqueue the customer to try again (up to 3 attempts)
@@ -700,6 +713,7 @@ export const useSimulationStore = defineStore("simulation", () => {
         productIds: productIds,
         cost: 0,
         extra: { retries: newRetries },
+        warning: true,
       });
 
       if (newRetries < 3) {
@@ -843,6 +857,20 @@ export const useSimulationStore = defineStore("simulation", () => {
       await axios.post(`${API_BASE}/post-event`, data);
     } catch (error) {
       console.error("Error posting order event:", error);
+    }
+    // show a toast notification
+    try {
+      if (payload.success === false || payload.extra?.showMessage) {
+        let type = "";
+        if (payload.warning) type = "warning";
+        else if (!payload.warning) type = "success";
+        else type = "error";
+        const toastStore = useToastStore();
+        const msg = `${payload.reason} ${payload.warning ? `(${payload.extra.retries ?? 0} tries)` : ""}`;
+        toastStore.addToast({ type: type as any, message: msg, timer: 4000 });
+      }
+    } catch (e) {
+      // non-fatal
     }
   }
 

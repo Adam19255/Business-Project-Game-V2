@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import axios from "axios";
 import { useMaterialStore } from "./MaterialStore";
 import { useProductStore } from "./ProductStore";
+import { useToastStore } from "./ToastStore";
 
 export interface Business {
   _id?: string | number;
@@ -26,9 +27,13 @@ export const useBusinessStore = defineStore("business", {
       try {
         const res = await axios.post<Business>(`${API_BASE}/business`, business);
         this.businesses.push(res.data);
+        const toastStore = useToastStore();
+        toastStore.addToast({ type: "success", message: "Business created successfully" });
         return res.data;
       } catch (error) {
         console.error("Error creating business:", error);
+        const toastStore = useToastStore();
+        toastStore.addToast({ type: "error", message: "Error creating business" });
         throw error;
       } finally {
         this.isLoading = false;
@@ -56,6 +61,8 @@ export const useBusinessStore = defineStore("business", {
         return res.data;
       } catch (error) {
         console.error("Error fetching business by id:", error);
+        const toastStore = useToastStore();
+        toastStore.addToast({ type: "error", message: "Error fetching business by id" });
         throw error;
       } finally {
         this.isLoading = false;
@@ -78,6 +85,8 @@ export const useBusinessStore = defineStore("business", {
         return data;
       } catch (error) {
         console.error("Error loading business:", error);
+        const toastStore = useToastStore();
+        toastStore.addToast({ type: "error", message: "Error loading business" });
         throw error;
       }
     },
@@ -92,9 +101,13 @@ export const useBusinessStore = defineStore("business", {
         if (this.selectedBusiness && String(this.selectedBusiness._id) === String(id)) {
           this.selectedBusiness = updated;
         }
+        const toastStore = useToastStore();
+        toastStore.addToast({ type: "success", message: "Business updated successfully" });
         return updated;
       } catch (error) {
         console.error("Error updating business:", error);
+        const toastStore = useToastStore();
+        toastStore.addToast({ type: "error", message: "Error updating business" });
         throw error;
       } finally {
         this.isLoading = false;
@@ -109,8 +122,12 @@ export const useBusinessStore = defineStore("business", {
         if (this.selectedBusiness && String(this.selectedBusiness._id) === String(id)) {
           this.selectedBusiness = null;
         }
+        const toastStore = useToastStore();
+        toastStore.addToast({ type: "success", message: "Business deleted successfully" });
       } catch (error) {
         console.error("Error deleting business:", error);
+        const toastStore = useToastStore();
+        toastStore.addToast({ type: "error", message: "Error deleting business" });
         throw error;
       } finally {
         this.isLoading = false;
