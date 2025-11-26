@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import MaterialPlaceholder from "@/assets/placeholders/material-placeholder.jpg";
 import Buns from "@/assets/icons/buns.svg";
 import Lettuce from "@/assets/icons/lettuce.svg";
 import Tomato from "@/assets/icons/tomato.svg";
@@ -31,7 +30,7 @@ const iconSrc = computed(() => {
   const name = String(props.material?.name ?? "")
     .toLowerCase()
     .trim();
-  return ICONS[name] ?? MaterialPlaceholder;
+  return ICONS[name] ?? Tomato;
 });
 </script>
 

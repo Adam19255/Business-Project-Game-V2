@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import ProductPlaceholder from "../assets/placeholders/product-placeholder.jpg";
 import Fries from "@/assets/icons/fries.svg";
 import OnionRings from "@/assets/icons/onion-rings.svg";
 import Hamburger from "@/assets/icons/hamburger.svg";
@@ -21,7 +20,7 @@ const iconSrc = computed(() => {
   const name = String(props.product?.name ?? "")
     .toLowerCase()
     .trim();
-  return ICONS[name] ?? ProductPlaceholder;
+  return ICONS[name] ?? Hamburger;
 });
 </script>
 
