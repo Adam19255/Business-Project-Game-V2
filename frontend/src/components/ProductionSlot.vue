@@ -72,7 +72,7 @@ const iconSrc = computed(() => {
 <template>
   <div class="production-slot">
     <h2 class="production-title">Production Slot (Customer: #{{ customerId(slot) }})</h2>
-    <div class="production-slot-container">
+    <div class="production-slot-container" :class="slot.priority === 1 ? 'high' : ''">
       <div class="production-header">
         <p class="production-status" v-if="slot.priority === 1">⚠️ High Priority</p>
         <p class="production-status" v-else>⏳ In Progress</p>
@@ -120,6 +120,10 @@ const iconSrc = computed(() => {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 2rem;
   background-color: white;
+
+  &.high {
+    border: 3px solid #ff4d4f;
+  }
 
   .production-header {
     flex: 1;
